@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#112c42">
+    <meta name="description" content="DonativoSeguro: gestión de donantes y donativos. Prototipo de demostración.">
+    <title>DonativoSeguro | Gestión de donativos</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%230c9c88'/%3E%3Ctext x='8' y='30' font-size='30' fill='white'%3E♥%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/scrip.js" defer></script>
+  </head>
+  <body>
+    <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 3 6v6c0 5 9 9 9 9s9-4 9-9V6Z"/><path d="M12 15s-5-3-3-5c1-1 3 0 3 1 0-1 2-2 3-1 2 2-3 5-3 5Z"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+      <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 3c3 1 3 4 3 7"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20 5c-3-3-7-1-8 2-1-3-5-5-8-2-5 5 8 15 8 15S25 10 20 5Z"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H4v16h5m6-14 6 6-6 6m-6-6h12"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M10 21h4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14 5 5 5M4 20l5-1L21 7a2 2 0 0 0-5-5L4 14Z"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+      <symbol id="i-money" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18M8 15h2m4 0h2"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 4v3"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 2 10 5v10l-10 5L2 17V7Zm0 10v10M2 7l10 5 10-5M7 4.5l10 5V14"/></symbol>
+    </svg>
+    <section id="login-screen" class="login-screen">
+      <div class="login-story">
+        <a class="brand" href="#" aria-label="DonativoSeguro, inicio"><span class="brand-logo"><svg><use href="#i-shield"/></svg></span><span>Donativo<span class="brand-accent">Seguro</span><small>CADA APORTE CUENTA</small></span></a>
+        <div class="story-content">
+          <span class="eyebrow"><span class="live-dot"></span> CONECTAMOS GENEROSIDAD CON IMPACTO</span>
+          <h1>Un pequeño aporte.<br>Un <em>gran cambio.</em></h1>
+          <p>Detrás de cada donativo hay una historia.<br>Te ayudamos a cuidar cada una de ellas.</p>
+          <div class="impact-art" aria-hidden="true">
+            <div class="orbit orbit-one">
+            </div>
+            <div class="orbit orbit-two">
+            </div>
+            <div class="floating-icon art-people">
+              <svg><use href="#i-people"/></svg>
+            </div>
+            <div class="impact-receipt">
+              <div class="receipt-top">
+                <span class="receipt-icon"><svg><use href="#i-heart"/></svg></span>
+                <span>GENEROSIDAD EN ACCIÓN<small>Cada donativo deja huella</small></span>
+                <svg><use href="#i-check"/></svg>
+              </div>
+              <div class="receipt-amount">
+                Más confianza.
+                <br>
+                <span>Más oportunidades.</span>
+              </div>
+              <div class="receipt-line">
+              </div>
+              <div class="receipt-bottom">
+                <span class="mini-avatars"><b>ML</b><b>CH</b><b>AM</b></span>
+                <span>Juntos hacemos la diferencia</span>
+              </div>
+            </div>
+            <div class="art-check">
+              <svg><use href="#i-shield"/></svg>
+              Compromiso con la transparencia
+            </div>
+          </div>
+        </div>
+        <div class="story-footer">
+          <span>Una plataforma con propósito.</span>
+          <span>Hecha para ayudar <svg><use href="#i-heart"/></svg></span>
+        </div>
+      </div>
+      <div class="login-main">
+        <span class="demo-label">PROTOTIPO INTERACTIVO</span>
+        <div class="login-panel">
+          <span class="login-mark"><svg><use href="#i-shield"/></svg></span>
+          <span class="section-kicker">UN ESPACIO PARA HACER EL BIEN</span>
+          <h2>Tu ayuda empieza aquí.</h2>
+          <p class="login-subtitle">Inicia sesión y continúa construyendo un impacto positivo.</p>
+          <form id="login-form">
+            <label for="login-email">Correo electrónico</label>
+            <div class="input-icon">
+              <svg><use href="#i-mail"/></svg>
+              <input id="login-email" name="email" type="email" placeholder="tu@correo.com" autocomplete="username" required>
+            </div>
+            <label for="login-password">Contraseña</label>
+            <div class="input-icon password-input">
+              <svg><use href="#i-lock"/></svg>
+              <input id="login-password" name="password" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password" required>
+              <button class="icon-button" type="button" id="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false"><svg><use href="#i-eye"/></svg></button>
+            </div>
+            <p id="login-error" class="form-error" role="alert" hidden></p>
+            <p id="caps-lock-hint" class="login-hint" hidden>Bloq Mayús está activado.</p>
+            <div class="login-help"><span><svg><use href="#i-lock"/></svg> Acceso con tu cuenta</span><button type="button" class="text-button" id="access-help">¿Necesitas acceso?</button></div>
+            <button class="button primary login-submit" type="submit">Iniciar sesión <svg><use href="#i-arrow"/></svg></button>
+          </form>
+          <p class="login-scope">Tu cuenta te lleva a tu espacio. El administrador tiene una vista general del equipo.</p>
+          <details class="demo-access" id="demo-access">
+            <summary class="demo-heading">
+              <svg><use href="#i-grid"/></svg>
+              <strong>Probar con una cuenta de ejemplo</strong>
+              <svg class="demo-chevron"><use href="#i-plus"/></svg>
+            </summary>
+            <p>Cambia de cuenta para comparar los espacios. Cada usuario ve únicamente sus registros.</p>
+            <button type="button" class="demo-account" data-demo="admin"><span class="demo-account-icon"><svg><use href="#i-shield"/></svg></span><span><strong>Administración</strong><small>Todo el equipo · gestión y verificación</small></span><svg><use href="#i-arrow"/></svg></button>
+            <button type="button" class="demo-account" data-demo="usuario"><span class="avatar">VS</span><span><strong>Valeria Sánchez</strong><small>Portal del donador · mis aportaciones</small></span><svg><use href="#i-arrow"/></svg></button>
+            <button type="button" class="demo-account" data-demo="mateo"><span class="avatar alternate-avatar">MR</span><span><strong>Mateo Ruiz</strong><small>Otra cuenta · registros independientes</small></span><svg><use href="#i-arrow"/></svg></button>
+            <div class="demo-password">
+              Contraseña de las cuentas de ejemplo:
+              <code>123456</code>
+            </div>
+          </details>
+          <p id="demo-selection" class="login-hint" aria-live="polite" hidden></p>
+          <p class="local-note"><svg><use href="#i-lock"/></svg> Entorno de demostración. Usa únicamente datos ficticios.</p>
+        </div>
+        <footer class="login-footer">
+          <span>© <span data-year></span> DonativoSeguro</span>
+          <span>La confianza empieza con la transparencia.</span>
+        </footer>
+      </div>
+    </section>
+    <div id="app" class="app" hidden>
+      <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="Cerrar menú" hidden></button>
+      <aside id="sidebar" class="sidebar" aria-label="Menú principal">
+        <a class="brand" href="#dashboard" data-page="dashboard"><span class="brand-logo"><svg><use href="#i-shield"/></svg></span><span>Donativo<span class="brand-accent">Seguro</span><small>CADA APORTE CUENTA</small></span></a>
+        <div class="workspace-switch"><span class="workspace-icon"><svg><use href="#i-lock"/></svg></span><div><strong id="workspace-name">Mi espacio</strong><small id="workspace-description">Solo tus registros</small></div></div>
+        <span class="nav-label">NAVEGACIÓN</span>
+        <nav>
+          <button data-page="dashboard" class="nav-item active"><svg><use href="#i-grid"/></svg> Dashboard</button>
+          <button data-page="donantes" class="nav-item"><svg><use href="#i-people"/></svg> Donantes</button>
+          <button data-page="registro" class="nav-item"><svg><use href="#i-plus"/></svg> Registrar donativo</button>
+          <button data-page="donativos" class="nav-item"><svg><use href="#i-list"/></svg> Consultar donativos</button>
+          <div class="nav-divider" data-admin>
+          </div>
+          <span class="nav-label" data-admin>ADMINISTRACIÓN</span>
+          <button data-page="usuarios" class="nav-item" data-admin><svg><use href="#i-shield"/></svg> Usuarios</button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="purpose-card">
+            <svg><use href="#i-heart"/></svg>
+            <strong>Cada aporte cuenta</strong>
+            <p>Gracias por ser parte de un cambio positivo.</p>
+            <span>Juntos, llegamos más lejos.</span>
+          </div>
+          <button id="logout" class="nav-item"><svg><use href="#i-logout"/></svg> Cerrar sesión</button>
+          <div class="sidebar-version">
+            <span class="live-dot"></span>
+            Entorno de demostración
+            <span>v2.0</span>
+          </div>
+        </div>
+      </aside>
+      <div class="app-main">
+        <header class="header">
+          <div class="header-title">
+            <button id="menu-toggle" class="icon-button menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar"><svg><use href="#i-menu"/></svg></button>
+            <span class="header-home">Mi espacio <span>/</span></span>
+            <strong id="header-section">Dashboard</strong>
+          </div>
+          <div class="header-account">
+            <div class="notification-wrap">
+              <button id="notification-toggle" class="icon-button notification-button" aria-label="Ver notificaciones" aria-expanded="false"><svg><use href="#i-bell"/></svg><span></span></button>
+              <div id="notifications" class="notification-panel" hidden>
+                <strong>Actividad de la plataforma</strong>
+                <p id="notification-text"></p>
+                <small>Datos de este navegador · Demostración</small>
+              </div>
+            </div>
+            <div class="account-info">
+              <strong id="account-name"></strong>
+              <small id="account-role"></small>
+            </div>
+            <span id="account-avatar" class="avatar"></span>
+          </div>
+        </header>
+        <main id="main-content" tabindex="-1">
+          <div class="scope-notice"><svg><use href="#i-lock"/></svg><span id="scope-notice-text"></span><span id="scope-badge" class="badge"></span></div>
+          <section id="page-dashboard" class="page" aria-labelledby="dashboard-title">
+            <div class="page-heading">
+              <div>
+                <span class="section-kicker">UNA VISTA DE TU IMPACTO</span>
+                <h1 id="dashboard-title">Bienvenido a DonativoSeguro<span class="title-dot">.</span></h1>
+                <p>Consulta rápidamente la actividad reciente de la plataforma.</p>
+              </div>
+              <span class="date-chip"><svg><use href="#i-calendar"/></svg><span id="today-label"></span></span>
+            </div>
+            <div class="welcome-banner">
+              <div>
+                <span class="banner-kicker">HAGAMOS QUE LAS COSAS BUENAS SUCEDAN</span>
+                <h2>Tu gestión transforma la ayuda en impacto.</h2>
+                <p>Cada donante, cada aporte y cada detalle, en un solo lugar.</p>
+                <button class="button banner-button" data-page="registro"><svg><use href="#i-plus"/></svg> Registrar donativo <svg><use href="#i-arrow"/></svg></button>
+              </div>
+              <div class="banner-art" aria-hidden="true">
+                <span class="banner-ring"></span>
+                <svg><use href="#i-heart"/></svg>
+                <span class="art-spark spark-one">+</span>
+                <span class="art-spark spark-two">+</span>
+                <span class="banner-check"><svg><use href="#i-check"/></svg></span>
+              </div>
+            </div>
+            <div class="stats-grid" id="dashboard-stats">
+            </div>
+            <div id="review-summary" class="review-summary"></div>
+            <div class="dashboard-columns">
+              <article class="card recent-card">
+                <div class="card-heading">
+                  <div>
+                    <h2>Donativos recientes</h2>
+                    <p>Los últimos aportes que hacen la diferencia.</p>
+                  </div>
+                  <button class="text-button" data-page="donativos">Ver todos <svg><use href="#i-arrow"/></svg></button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <caption class="sr-only">Últimos cinco donativos</caption>
+                    <thead>
+                      <tr>
+                        <th>Donante</th>
+                        <th>Tipo</th>
+                        <th>Cantidad / Descripción</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recent-body">
+                    </tbody>
+                  </table>
+                </div>
+                <div class="card-foot">
+                  <span class="live-dot"></span>
+                  Información actualizada con tus registros
+                </div>
+              </article>
+              <aside class="quick-column">
+                <article class="card quick-card">
+                  <h2>Acciones rápidas</h2>
+                  <p>El siguiente paso está aquí.</p>
+                  <button class="quick-action" data-action="new-donor"><span class="quick-icon teal"><svg><use href="#i-people"/></svg></span><span><strong>Registrar donante</strong><small>Conecta con quien quiere ayudar</small></span><svg><use href="#i-plus"/></svg></button>
+                  <button class="quick-action" data-page="registro"><span class="quick-icon blue"><svg><use href="#i-heart"/></svg></span><span><strong>Registrar donativo</strong><small>Un aporte, nuevas posibilidades</small></span><svg><use href="#i-plus"/></svg></button>
+                  <button class="quick-action" data-page="donativos"><span class="quick-icon purple"><svg><use href="#i-list"/></svg></span><span><strong>Ver donativos</strong><small>Consulta el historial completo</small></span><svg><use href="#i-arrow"/></svg></button>
+                </article>
+                <div class="transparency-card">
+                  <svg><use href="#i-shield"/></svg>
+                  <div>
+                    <strong>La transparencia nos une</strong>
+                    <p>Un registro claro es el primer paso para construir confianza.</p>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+          <section id="page-donantes" class="page" aria-labelledby="donantes-title" hidden>
+            <div class="page-heading">
+              <div>
+                <span class="section-kicker">PERSONAS QUE HACEN LA DIFERENCIA</span>
+                <h1 id="donantes-title">Gestión de donantes</h1>
+                <p>Registra y administra la información de los donantes.</p>
+              </div>
+              <button class="button primary" data-action="new-donor"><svg><use href="#i-plus"/></svg> Nuevo donante</button>
+            </div>
+            <article class="card">
+              <div class="table-toolbar">
+                <div>
+                  <h2>Directorio de donantes</h2>
+                  <p id="donor-count"></p>
+                </div>
+                <div class="input-icon search-field">
+                  <svg><use href="#i-search"/></svg>
+                  <input id="donor-search" type="search" placeholder="Buscar donante..." aria-label="Buscar donante">
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <caption class="sr-only">Directorio de donantes</caption>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Teléfono</th>
+                      <th>Tipo de persona</th>
+                      <th>Fecha de registro</th>
+                      <th data-admin>Responsable</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="donors-body">
+                  </tbody>
+                </table>
+              </div>
+              <div class="card-foot">
+                Los datos se conservan en este navegador.
+              </div>
+            </article>
+          </section>
+          <section id="page-registro" class="page" aria-labelledby="registro-title" hidden>
+            <div class="page-heading">
+              <div>
+                <span class="section-kicker">UN NUEVO APORTE, UN NUEVO IMPACTO</span>
+                <h1 id="registro-title">Registrar donativo</h1>
+                <p>Registra un nuevo donativo asociado a un donante.</p>
+              </div>
+            </div>
+            <div class="form-layout">
+              <article class="card form-card">
+                <div class="card-heading">
+                  <div>
+                    <h2>Información del donativo</h2>
+                    <p>Los campos con * son obligatorios.</p>
+                  </div>
+                  <span class="quick-icon teal"><svg><use href="#i-heart"/></svg></span>
+                </div>
+                <form id="donation-form">
+                  <div class="form-grid">
+                    <div class="field full">
+                      <label for="donation-donor">Donante *</label>
+                      <select id="donation-donor" name="donor" required></select>
+                      <p id="donation-owner-hint" class="field-hint"></p>
+                      <button type="button" class="text-button field-help" data-action="new-donor">¿Es su primer aporte? Registrar un donante <svg><use href="#i-plus"/></svg></button>
+                    </div>
+                    <fieldset class="field full donation-types">
+                      <legend>Tipo de donativo *</legend>
+                      <label class="type-option"><input type="radio" name="type" value="Efectivo" checked><svg><use href="#i-money"/></svg><span><strong>Efectivo</strong><small>Una contribución económica</small></span></label>
+                      <label class="type-option"><input type="radio" name="type" value="Especie"><svg><use href="#i-box"/></svg><span><strong>Especie</strong><small>Artículos, alimentos y más</small></span></label>
+                    </fieldset>
+                    <div class="field" id="amount-field">
+                      <label for="donation-amount">Cantidad *</label>
+                      <div class="money-input">
+                        <span>$</span>
+                        <input id="donation-amount" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" placeholder="0.00" required>
+                        <span>MXN</span>
+                      </div>
+                    </div>
+                    <div class="field" id="description-field" hidden>
+                      <label for="donation-description">Descripción del donativo *</label>
+                      <input id="donation-description" name="description" placeholder="Ej. 10 cajas de alimentos" maxlength="200" disabled>
+                    </div>
+                    <div class="field">
+                      <label for="donation-date">Fecha *</label>
+                      <input id="donation-date" name="date" type="date" required>
+                    </div>
+                    <div class="field full">
+                      <label for="donation-notes">Observaciones <span class="optional">(opcional)</span></label>
+                      <textarea id="donation-notes" name="notes" rows="4" placeholder="Agrega información que nos ayude a conocer mejor este aporte..." maxlength="1000"></textarea>
+                    </div>
+                  </div>
+                  <p class="form-error" id="donation-error" role="alert" hidden></p>
+                  <div class="form-actions">
+                    <button type="button" class="button secondary" id="cancel-donation">Cancelar</button>
+                    <button type="submit" class="button primary"><svg><use href="#i-check"/></svg> Registrar donativo</button>
+                  </div>
+                </form>
+              </article>
+              <aside class="registration-aside">
+                <span class="large-icon"><svg><use href="#i-shield"/></svg></span>
+                <h2>Un registro claro.<br>Una ayuda que cuenta.</h2>
+                <p>La información completa nos permite dar seguimiento a cada contribución.</p>
+                <ol>
+                  <li>Selecciona al donante.</li>
+                  <li>Indica qué tipo de ayuda recibiste.</li>
+                  <li>Revisa los datos y registra el aporte.</li>
+                </ol>
+                <div class="aside-note">
+                  <svg><use href="#i-lock"/></svg>
+                  <p>Este es un prototipo. Los registros se guardan localmente en tu navegador.</p>
+                </div>
+              </aside>
+            </div>
+          </section>
+          <section id="page-donativos" class="page" aria-labelledby="donativos-title" hidden>
+            <div class="page-heading">
+              <div>
+                <span class="section-kicker">TRANSPARENCIA EN CADA APORTE</span>
+                <h1 id="donativos-title">Consulta de donativos</h1>
+                <p>Explora y da seguimiento a todas las contribuciones.</p>
+              </div>
+              <button class="button primary" data-page="registro"><svg><use href="#i-plus"/></svg> Registrar donativo</button>
+            </div>
+            <article class="card">
+              <form id="filter-form" class="filter-bar">
+                <div class="field filter-search">
+                  <label for="donation-search">Donante</label>
+                  <div class="input-icon">
+                    <svg><use href="#i-search"/></svg>
+                    <input id="donation-search" type="search" placeholder="Buscar por donante...">
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="type-filter">Tipo de donativo</label>
+                  <select id="type-filter"><option value="">Todos</option><option>Efectivo</option><option>Especie</option></select>
+                </div>
+                <div class="field">
+                  <label for="date-filter">Fecha</label>
+                  <input id="date-filter" type="date">
+                </div>
+                <div class="field" data-admin>
+                  <label for="owner-filter">Responsable</label>
+                  <select id="owner-filter"><option value="">Todo el equipo</option></select>
+                </div>
+                <div class="field">
+                  <label for="status-filter">Estado</label>
+                  <select id="status-filter"><option value="">Todos</option><option value="Registrado">Por verificar</option><option value="Verificado">Verificado</option></select>
+                </div>
+                <button type="reset" class="button secondary">Limpiar filtros</button>
+              </form>
+              <div class="results-heading">
+                <h2>Historial de donativos</h2>
+                <span id="donation-count" class="count-badge"></span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <caption class="sr-only">Donativos que coinciden con los filtros</caption>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Donante</th>
+                      <th>Tipo</th>
+                      <th>Cantidad / Descripción</th>
+                      <th>Fecha</th>
+                      <th>Registrado por</th>
+                      <th data-admin>Responsable</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="donations-body">
+                  </tbody>
+                </table>
+              </div>
+              <div class="card-foot">
+                Montos expresados en pesos mexicanos (MXN).
+              </div>
+            </article>
+          </section>
+          <section id="page-usuarios" class="page" aria-labelledby="usuarios-title" hidden>
+            <div class="page-heading">
+              <div>
+                <span class="section-kicker">UN EQUIPO CON PROPÓSITO</span>
+                <h1 id="usuarios-title">Administración de usuarios</h1>
+                <p>Administra las cuentas y permisos de acceso a la plataforma.</p>
+              </div>
+              <button class="button primary" data-action="new-user"><svg><use href="#i-plus"/></svg> Nuevo usuario</button>
+            </div>
+            <div id="user-stats" class="user-stats">
+            </div>
+            <article class="card">
+              <div class="card-heading">
+                <div>
+                  <h2>Miembros del equipo</h2>
+                  <p>Gestiona los roles y el acceso a tu espacio de trabajo.</p>
+                </div>
+                <span class="badge blue">Solo administradores</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <caption class="sr-only">Usuarios de la plataforma</caption>
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Correo</th>
+                      <th>Rol</th>
+                      <th>Estado</th>
+                      <th>Último acceso</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-body">
+                  </tbody>
+                </table>
+              </div>
+              <div class="card-foot">
+                Selecciona el estado de un usuario para activar o desactivar su acceso.
+              </div>
+            </article>
+          </section>
+        </main>
+        <footer class="app-footer">
+          <span>© <span data-year></span> DonativoSeguro</span>
+          <span><svg><use href="#i-heart"/></svg> Cada aporte cuenta. Cada historia importa.</span>
+          <span>Prototipo frontend</span>
+        </footer>
+      </div>
+    </div>
+    <div id="donor-portal" class="donor-layout" hidden>
+      <header class="donor-navbar">
+        <div class="donor-nav-inner">
+          <a href="#/mi-espacio/inicio" class="brand donor-brand" data-donor-page="inicio"><span class="brand-logo"><svg><use href="#i-shield"/></svg></span><span>Donativo<span class="brand-accent">Seguro</span><small>MI PORTAL DE APORTACIONES</small></span></a>
+          <button type="button" id="donor-menu-toggle" class="icon-button donor-menu-toggle" aria-controls="donor-nav" aria-expanded="false" aria-label="Abrir navegación"><svg><use href="#i-menu"/></svg></button>
+          <nav id="donor-nav" class="donor-nav" aria-label="Portal del donador">
+            <a href="#/mi-espacio/inicio" data-donor-page="inicio">Inicio</a>
+            <a href="#/mi-espacio/aportar" data-donor-page="aportar">Hacer un donativo</a>
+            <a href="#/mi-espacio/donativos" data-donor-page="donativos">Mis donativos</a>
+            <a href="#/mi-espacio/impacto" data-donor-page="impacto">Mi impacto</a>
+          </nav>
+          <div class="donor-account">
+            <button type="button" id="donor-account-toggle" class="donor-account-toggle" aria-expanded="false" aria-controls="donor-account-menu"><span id="donor-nav-name"></span><span id="donor-nav-avatar" class="avatar"></span><svg><use href="#i-plus"/></svg></button>
+            <div id="donor-account-menu" class="donor-account-menu" hidden>
+              <p>Tu cuenta de donador</p>
+              <button type="button" data-donor-page="perfil"><svg><use href="#i-people"/></svg> Mi perfil</button>
+              <button type="button" id="donor-logout"><svg><use href="#i-logout"/></svg> Cerrar sesión</button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main id="donor-main" class="donor-main" tabindex="-1">
+        <section id="donor-page-inicio" class="donor-page" aria-labelledby="donor-home-title">
+          <div class="donor-hero">
+            <div class="donor-hero-copy">
+              <p id="donor-greeting" class="donor-greeting"></p>
+              <h1 id="donor-home-title">Gracias por ser<br>parte del <em>cambio.</em></h1>
+              <p>Cada aportación que realizas ayuda a construir nuevas oportunidades. Tu generosidad es el comienzo.</p>
+              <div class="donor-hero-actions"><button class="donor-button" data-donor-page="aportar">Hacer un donativo <svg><use href="#i-heart"/></svg></button><button class="donor-link" data-donor-page="donativos">Ver mis aportaciones <svg><use href="#i-arrow"/></svg></button></div>
+              <span class="donor-hero-note"><svg><use href="#i-shield"/></svg> Tu ayuda cuenta. Tu historia también.</span>
+            </div>
+            <div class="donor-illustration" aria-hidden="true">
+              <div class="donor-art-orbit"></div><div class="donor-art-orbit donor-art-orbit-outer"></div>
+              <div class="donor-art-heart"><svg><use href="#i-heart"/></svg><span>Pequeños gestos.<br><strong>Grandes posibilidades.</strong></span></div>
+              <span class="donor-art-person"><svg><use href="#i-people"/></svg></span><span class="donor-art-shield"><svg><use href="#i-shield"/></svg></span>
+              <span class="donor-art-label"><span class="live-dot"></span> La generosidad nos conecta</span><span class="donor-art-star">✦</span><span class="donor-art-star second">✦</span>
+            </div>
+          </div>
+          <div class="donor-section-heading"><div><span class="donor-eyebrow">CADA GESTO SUMA</span><h2>Tu impacto hasta ahora</h2></div><button class="donor-link" data-donor-page="impacto">Conocer mi impacto <svg><use href="#i-arrow"/></svg></button></div>
+          <div id="donor-home-impact" class="donor-impact-strip"></div>
+          <div class="donor-home-grid">
+            <article class="donor-footprint"><span class="donor-soft-icon"><svg><use href="#i-heart"/></svg></span><span class="donor-eyebrow">LA CONSTANCIA TRANSFORMA</span><h2>Tu ayuda deja huella.</h2><p>Gracias a personas como tú, cada aportación puede convertirse en una oportunidad para alguien más.</p><div id="donor-home-progress"></div><span class="donor-progress-note">Una meta personal para seguir ayudando.</span></article>
+            <article class="donor-card donor-latest"><div class="donor-card-title"><h2>Tu última aportación</h2><svg><use href="#i-heart"/></svg></div><div id="donor-latest-content"></div></article>
+          </div>
+          <div class="donor-section-heading"><div><span class="donor-eyebrow">HISTORIAS QUE SIGUEN SUMANDO</span><h2>Mis aportaciones recientes</h2></div><button class="donor-link" data-donor-page="donativos">Ver todo mi historial <svg><use href="#i-arrow"/></svg></button></div>
+          <div id="donor-recent-list" class="donor-history"></div>
+        </section>
+
+        <section id="donor-page-aportar" class="donor-page" aria-labelledby="donor-give-title" hidden>
+          <div class="donor-page-heading"><span class="donor-eyebrow">UN GESTO TUYO, NUEVAS POSIBILIDADES</span><h1 id="donor-give-title">Haz una nueva aportación</h1><p>Tu ayuda puede hacer la diferencia.</p></div>
+          <div class="donor-give-layout">
+            <form id="personal-donation-form" class="donor-card donor-donation-form">
+              <div class="donor-form-intro"><span class="donor-soft-icon"><svg><use href="#i-heart"/></svg></span><div><h2>¿Cómo te gustaría ayudar?</h2><p>Esta aportación se registrará a tu nombre.</p></div></div>
+              <fieldset class="donor-type-picker"><legend>Tipo de donativo *</legend><label><input type="radio" name="type" value="Efectivo" checked><span class="donor-soft-icon"><svg><use href="#i-money"/></svg></span><strong>Efectivo</strong><small>Un aporte económico</small></label><label><input type="radio" name="type" value="Especie"><span class="donor-soft-icon"><svg><use href="#i-box"/></svg></span><strong>Especie</strong><small>Alimentos, ropa y más</small></label></fieldset>
+              <div id="personal-amount-field" class="donor-field"><label for="personal-amount">Cantidad que deseas aportar *</label><div class="donor-money-input"><span>$</span><input id="personal-amount" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" placeholder="0.00" required><span>MXN</span></div><div class="donor-amount-options" aria-label="Cantidades sugeridas"><button type="button" data-amount="500" aria-pressed="false">$500</button><button type="button" data-amount="1000" aria-pressed="false">$1,000</button><button type="button" data-amount="2000" aria-pressed="false">$2,000</button><button type="button" data-amount="5000" aria-pressed="false">$5,000</button></div><p class="donor-field-help">Elige una cantidad o escribe la que tú prefieras.</p></div>
+              <div id="personal-description-field" class="donor-field" hidden><label for="personal-description">¿Qué te gustaría aportar? *</label><textarea id="personal-description" name="description" rows="3" maxlength="200" placeholder="Ej. 10 cajas de alimentos" disabled></textarea></div>
+              <div class="donor-field"><label for="personal-date">Fecha de tu aportación *</label><input id="personal-date" name="date" type="date" required></div>
+              <div class="donor-field"><label for="personal-notes">¿Hay algo que quieras contarnos? <span>(opcional)</span></label><textarea id="personal-notes" name="notes" rows="3" maxlength="1000" placeholder="Agrega observaciones sobre tu aportación... "></textarea></div>
+              <label class="donor-confirm"><input id="personal-confirm" name="confirm" type="checkbox" required><span>Confirmo que la información proporcionada es correcta.</span></label>
+              <p id="personal-donation-error" class="form-error" role="alert" hidden></p>
+              <button type="submit" class="donor-button donor-submit">Registrar mi donativo <svg><use href="#i-arrow"/></svg></button>
+              <p class="donor-form-disclaimer">Registro de demostración. No se realiza ningún cobro ni transferencia.</p>
+            </form>
+            <aside class="donor-give-aside"><span class="donor-soft-icon"><svg><use href="#i-shield"/></svg></span><h2>La ayuda empieza<br>contigo.</h2><p>No hay aportación pequeña cuando nace de las ganas de ayudar.</p><ol><li><strong>Cuéntanos sobre tu aporte</strong><span>Completa los detalles de tu donativo.</span></li><li><strong>Recibe tu folio</strong><span>Guárdalo para consultar el seguimiento.</span></li><li><strong>Acompaña su camino</strong><span>Revisa su estado en Mis donativos.</span></li></ol><p class="donor-aside-note">Después del registro, el equipo revisará tu aportación.</p></aside>
+          </div>
+        </section>
+
+        <section id="donor-page-donativos" class="donor-page" aria-labelledby="donor-history-title" hidden>
+          <div class="donor-page-heading donor-heading-with-action"><div><span class="donor-eyebrow">TU GENEROSIDAD, EN UN SOLO LUGAR</span><h1 id="donor-history-title">Mis donativos</h1><p>Aquí puedes consultar todas las aportaciones que has registrado.</p></div><button class="donor-button" data-donor-page="aportar"><svg><use href="#i-plus"/></svg> Hacer un donativo</button></div>
+          <div id="donor-history-summary" class="donor-history-summary"></div>
+          <form id="personal-filter-form" class="donor-history-filters"><fieldset class="donor-filter-tabs"><legend class="sr-only">Filtrar por tipo de donativo</legend><label><input type="radio" name="type" value="" checked><span>Todos</span></label><label><input type="radio" name="type" value="Efectivo"><span>Efectivo</span></label><label><input type="radio" name="type" value="Especie"><span>Especie</span></label></fieldset><div class="donor-date-filter"><label for="personal-filter-date">Fecha</label><input id="personal-filter-date" name="date" type="date"></div><button type="reset" class="donor-link">Limpiar filtros</button></form>
+          <p id="donor-history-count" class="donor-list-count" aria-live="polite"></p>
+          <div id="donor-history-list" class="donor-history"></div>
+        </section>
+
+        <section id="donor-page-impacto" class="donor-page" aria-labelledby="donor-impact-title" hidden>
+          <div class="donor-page-heading"><span class="donor-eyebrow">MIRA TODO LO QUE HAS CONSTRUIDO</span><h1 id="donor-impact-title">Mi impacto</h1><p>Cada aportación cuenta. Este es el camino que has construido.</p></div>
+          <div class="donor-impact-feature"><div><span class="donor-eyebrow">TU GENEROSIDAD EN ACCIÓN</span><h2>Los pequeños gestos<br>hacen grandes historias.</h2><p>Este es un reflejo de tus aportaciones, de tu constancia y de tus ganas de ayudar.</p></div><svg aria-hidden="true"><use href="#i-heart"/></svg></div>
+          <div id="donor-impact-numbers" class="donor-impact-strip donor-impact-four"></div>
+          <article class="donor-card donor-journey"><div class="donor-section-heading"><div><span class="donor-eyebrow">PASO A PASO</span><h2>Tu camino</h2></div><span class="donor-journey-label">Cada paso tiene valor</span></div><ol id="donor-journey-timeline" class="donor-timeline"></ol><div id="donor-journey-progress"></div><p class="donor-progress-note">Meta personal orientativa del prototipo. Los avances se calculan con tus registros.</p></article>
+          <div class="donor-thanks-note"><svg><use href="#i-heart"/></svg><h2>Gracias por formar parte de DonativoSeguro.</h2><p>El siguiente capítulo de esta historia también puede empezar contigo.</p><button class="donor-button" data-donor-page="aportar">Seguir ayudando <svg><use href="#i-arrow"/></svg></button></div>
+        </section>
+
+        <section id="donor-page-perfil" class="donor-page" aria-labelledby="donor-profile-title" hidden>
+          <div class="donor-page-heading"><span class="donor-eyebrow">QUÉ BUENO QUE ESTÉS AQUÍ</span><h1 id="donor-profile-title">Mi perfil</h1><p>Un pequeño espacio para ti y para mantenernos en contacto.</p></div>
+          <div class="donor-profile-layout"><aside class="donor-profile-card"><span id="donor-profile-avatar" class="avatar"></span><h2 id="donor-profile-name"></h2><p>Parte de nuestra comunidad</p><span class="donor-member-label">Miembro desde</span><strong id="donor-member-since"></strong><svg class="donor-profile-heart" aria-hidden="true"><use href="#i-heart"/></svg></aside>
+            <form id="personal-profile-form" class="donor-card donor-profile-form"><h2>Tu información personal</h2><p>Puedes actualizar tu nombre y tu teléfono.</p><div class="donor-field"><label for="personal-name">Nombre completo *</label><input id="personal-name" name="name" autocomplete="name" maxlength="100" required></div><div class="donor-field"><label for="personal-email">Correo electrónico</label><input id="personal-email" type="email" autocomplete="email" readonly><p class="donor-field-help">Tu correo identifica tu cuenta. Para cambiarlo, contacta a administración.</p></div><div class="donor-field"><label for="personal-phone">Teléfono *</label><input id="personal-phone" name="phone" type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="Ingresa 10 dígitos, sin espacios ni símbolos." placeholder="10 dígitos" required></div><p id="personal-profile-error" class="form-error" role="alert" hidden></p><div class="donor-profile-actions"><button type="submit" class="donor-button">Guardar cambios <svg><use href="#i-check"/></svg></button></div></form>
+          </div>
+        </section>
+      </main>
+      <footer class="donor-footer"><span>© <span data-year></span> DonativoSeguro</span><span><svg><use href="#i-heart"/></svg> Cada aporte cuenta. El tuyo también.</span><span>Portal del donador · Demostración</span></footer>
+    </div>
+    <dialog id="modal" aria-labelledby="modal-title">
+      <div class="modal-heading">
+        <div>
+          <span id="modal-kicker" class="section-kicker">DONATIVOSEGURO</span>
+          <h2 id="modal-title"></h2>
+        </div>
+        <button type="button" class="icon-button" data-close-modal aria-label="Cerrar modal"><svg><use href="#i-close"/></svg></button>
+      </div>
+      <div id="modal-content">
+      </div>
+    </dialog>
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false">
+    </div>
+    <noscript>
+      <div class="noscript-message">
+        Activa JavaScript para utilizar la demostración de DonativoSeguro.
+      </div>
+    </noscript>
+  </body>
+</html>
