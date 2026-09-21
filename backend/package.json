@@ -1,0 +1,32 @@
+{
+  "name": "donativoseguro-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API y servidor de DonativoSeguro",
+  "engines": { "node": ">=24.11 <25" },
+  "scripts": {
+    "configure": "node scripts/configure.js",
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "check": "node --check src/server.js && node --check ../frontend/js/scrip.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": ["src/**/*.js", "!src/server.js"],
+    "coverageReporters": ["text", "lcov", "json-summary"],
+    "coverageThreshold": { "global": { "branches": 80, "functions": 80, "lines": 80, "statements": 80 } }
+  }
+}

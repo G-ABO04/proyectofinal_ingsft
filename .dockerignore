@@ -1,0 +1,11 @@
+.git
+.agents
+.codex
+**/node_modules
+**/.env
+**/.env.*
+backend/storage
+backend/coverage
+reports
+.scannerwork
+**/*.sqlite*

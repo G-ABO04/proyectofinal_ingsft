@@ -1,0 +1,52 @@
+{
+  "component": {
+    "key": "donativoseguro",
+    "name": "DonativoSeguro",
+    "qualifier": "TRK",
+    "measures": [
+      {
+        "metric": "ncloc",
+        "value": "4429"
+      },
+      {
+        "metric": "coverage",
+        "value": "96.6",
+        "bestValue": false
+      },
+      {
+        "metric": "code_smells",
+        "value": "26",
+        "bestValue": false
+      },
+      {
+        "metric": "duplicated_lines_density",
+        "value": "0.0",
+        "bestValue": true
+      },
+      {
+        "metric": "sqale_index",
+        "value": "236",
+        "bestValue": false
+      },
+      {
+        "metric": "bugs",
+        "value": "0",
+        "bestValue": true
+      },
+      {
+        "metric": "alert_status",
+        "value": "ERROR"
+      },
+      {
+        "metric": "vulnerabilities",
+        "value": "0",
+        "bestValue": true
+      },
+      {
+        "metric": "security_hotspots",
+        "value": "1",
+        "bestValue": false
+      }
+    ]
+  }
+}

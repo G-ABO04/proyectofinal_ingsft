@@ -1,0 +1,68 @@
+name: Pruebas y despliegue de prueba
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm run check && npm run test:coverage && npm audit --audit-level=high
+        working-directory: backend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cobertura-jest
+          path: backend/coverage
+      - name: SonarQube (cuando el servidor está configurado)
+        if: ${{ vars.SONAR_HOST_URL != '' && github.event_name != 'pull_request' }}
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+  staging:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir y desplegar un entorno de prueba aislado
+        shell: bash
+        run: |
+          docker build -t donativoseguro:test .
+          export JWT_SECRET=$(openssl rand -hex 48)
+          export SETUP_TOKEN=$(openssl rand -hex 24)
+          docker run -d --name staging -p 127.0.0.1:3000:3000 \
+            -e NODE_ENV=test -e JWT_SECRET -e SETUP_TOKEN \
+            -e PUBLIC_ORIGIN=http://127.0.0.1:3000 donativoseguro:test
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health; then break; fi
+            sleep 2
+          done
+          curl --fail http://127.0.0.1:3000/api/health
+          node backend/scripts/smoke.cjs
+      - name: OWASP ZAP contra el despliegue de prueba
+        run: |
+          mkdir -p reports
+          chmod 777 reports
+          docker run --rm --network host -v "$PWD/reports:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://127.0.0.1:3000 -r zap-baseline.html -J zap-baseline.json -I
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seguridad-staging
+          path: reports
+      - name: Cerrar el entorno de prueba
+        if: always()
+        run: docker logs staging; docker rm -f staging

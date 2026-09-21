@@ -1,0 +1,29 @@
+warning: in the working copy of 'backend/.env.example', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/data/donantes.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/data/usuarios.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/middleware/auth.middleware.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/routes/auth.routes.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/routes/donantes.routes.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/src/server.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/tests/auth.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/tests/donantes.test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/css/styles.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/js/scrip.js', LF will be replaced by CRLF the next time Git touches it
+ backend/.env.example                      |   8 [32m+[m
+ backend/package.json                      |  32 [32m++[m
+ backend/src/app.js                        |  42 [32m++[m
+ backend/src/data/donantes.js              |  18 [32m+[m
+ backend/src/data/usuarios.js              |  15 [32m+[m
+ backend/src/middleware/auth.middleware.js |  25 [32m++[m
+ backend/src/routes/auth.routes.js         |  54 [32m+++[m
+ backend/src/routes/donantes.routes.js     |  48 [32m++[m
+ backend/src/server.js                     |  15 [32m+[m
+ backend/tests/auth.test.js                |  71 [32m+++[m
+ backend/tests/donantes.test.js            |  54 [32m+++[m
+ frontend/css/styles.css                   |   8 [32m+[m
+ frontend/index.html                       |  58 [32m++[m[31m-[m
+ frontend/js/scrip.js                      | 720 [32m++++++++++++++++[m[31m--------------[m
+ 14 files changed, 795 insertions(+), 373 deletions(-)

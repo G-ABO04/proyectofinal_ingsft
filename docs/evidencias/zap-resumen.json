@@ -1,0 +1,36 @@
+{
+  "fecha": "2026-09-21T06:15:22.938Z",
+  "tipo": "ZAP Baseline, pasivo sin autenticar",
+  "alerts": [
+    {
+      "id": "10202",
+      "name": "Absence of Anti-CSRF Tokens",
+      "risk": "Medium (Low)",
+      "count": "5"
+    },
+    {
+      "id": "10111",
+      "name": "Authentication Request Identified",
+      "risk": "Informational (Low)",
+      "count": "1"
+    },
+    {
+      "id": "10109",
+      "name": "Modern Web Application",
+      "risk": "Informational (Medium)",
+      "count": "3"
+    },
+    {
+      "id": "10049",
+      "name": "Storable and Cacheable Content",
+      "risk": "Informational (Medium)",
+      "count": "5"
+    },
+    {
+      "id": "10049",
+      "name": "Storable but Non-Cacheable Content",
+      "risk": "Informational (Medium)",
+      "count": "1"
+    }
+  ]
+}

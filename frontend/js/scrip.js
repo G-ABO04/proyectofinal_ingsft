@@ -1,19 +1,121 @@
-(() => {
   'use strict';
-
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
-  const STORAGE_KEY = 'donativoSeguro.datos.v1';
-  const SESSION_KEY = 'donativoSeguro.sesion';
-  const TAB_SESSION_KEY = 'donativoSeguro.sesion.pestana';
-  const pageTitles = { dashboard: 'Dashboard', donantes: 'Donantes', registro: 'Registrar donativo', donativos: 'Consultar donativos', usuarios: 'Usuarios' };
-  const money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 });
-  const dateFormat = new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  const TOKEN_KEY = 'donativoSeguro.accessToken';
+  const pageTitles = { dashboard:'Resumen general', donantes:'Todos los donantes', registro:'Registrar donativo', donativos:'Todos los donativos', usuarios:'Usuarios' };
+  const donorPages = { inicio:'Inicio', aportar:'Hacer un donativo', donativos:'Mis donativos', impacto:'Mi impacto', perfil:'Mi perfil' };
+  const money = new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', maximumFractionDigits:2 });
+  const dateFormat = new Intl.DateTimeFormat('es-MX', { day:'2-digit', month:'short', year:'numeric' });
+  let data = { donors:[], donations:[], users:[] };
   let currentUser = null;
   let currentPage = 'dashboard';
+  let donorPage = 'inicio';
   let modalTrigger = null;
-  let storageWarning = false;
+  let accessToken = '';
+  let refreshing = false;
+  try { accessToken = sessionStorage.getItem(TOKEN_KEY) || ''; } catch {}
+  const isAdmin = () => currentUser?.role === 'Administrador';
+  const visibleDonors = () => isAdmin() ? data.donors : [];
+  const visibleDonations = () => currentUser ? data.donations : [];
+  const ownerName = (id) => data.users.find(user => user.id === id)?.name || 'Sin asignar';
+  const donorName = (donation) => donation.donorName || '';
+  const donationValue = (donation) => donation.type === 'Efectivo' ? money.format(donation.amount) : donation.description;
+  const sortedDonations = () => [...visibleDonations()].sort((a,b) => b.date.localeCompare(a.date) || Number(b.id.slice(4))-Number(a.id.slice(4)));
+  const denyAccess = () => toast('Esta acción no está disponible en tu cuenta.', true);
+  const authorizedDonor = (id) => isAdmin() ? data.donors.find(item => item.id === id) : null;
 
+  async function api(path, options = {}) {
+    const requestToken = accessToken;
+    const headers = { ...(options.body ? { 'Content-Type':'application/json' } : {}), ...(accessToken ? { Authorization:`Bearer ${accessToken}` } : {}) };
+    let response;
+    try { response = await fetch('/api' + path, { ...options, headers, body:options.body ? JSON.stringify(options.body) : undefined }); }
+    catch { throw new Error('No hay conexión con el servidor. Tus cambios no se guardaron.'); }
+    let body = {};
+    if (response.status !== 204) {
+      try { body = await response.json(); }
+      catch { throw new Error('Abre la aplicación desde http://127.0.0.1:3000 después de iniciar el backend.'); }
+    }
+    if (!response.ok) {
+      if (response.status === 401 && currentUser && requestToken === accessToken) endSession();
+      const details = body.fields?.map(item => item.message).join(' ');
+      throw new Error(details || body.error || 'No fue posible completar la operación.');
+    }
+    return body;
+  }
+
+  async function loadData() {
+    const requestToken = accessToken;
+    const { user } = await api('/auth/me');
+    if (requestToken !== accessToken) return;
+    const admin = user.role === 'Administrador';
+    const [donations, donors, users] = await Promise.all([
+      api('/donativos'), admin ? api('/donantes') : {donors:[]}, admin ? api('/usuarios') : {users:[]}
+    ]);
+    if (requestToken !== accessToken) return;
+    currentUser = user;
+    data = {donors:donors.donors, users:users.users, donations:donations.donations};
+    renderAll();
+  }
+
+  function renderAll() {
+    $('#app').hidden = !isAdmin();
+    $('#donor-portal').hidden = !currentUser || isAdmin();
+    if (!currentUser) return;
+    if (isAdmin()) {
+      renderAccount(); renderDashboard(); renderDonors(); renderDonations(); renderUsers();
+    } else {
+      for (const selector of ['#users-body','#donors-body','#donations-body','#recent-body','#dashboard-stats','#user-stats','#review-summary','#donation-donor']) $(selector).innerHTML = '';
+      renderPortal();
+    }
+  }
+
+  async function startSession(result) {
+    accessToken = result.accessToken;
+    try { sessionStorage.setItem(TOKEN_KEY, accessToken); } catch {}
+    currentUser = result.user;
+    $('#login-screen').hidden = true;
+    $('#login-form').reset();
+    $('#login-password').type = 'password';
+    $('#toggle-password').setAttribute('aria-label','Mostrar contraseña');
+    $('#toggle-password').setAttribute('aria-pressed','false');
+    $('#login-error').hidden = true;
+    $('#caps-lock-hint').hidden = true;
+    $('#donor-search').value = '';
+    $('#filter-form').reset();
+    $('#personal-filter-form').reset();
+    resetDonation(); resetPersonalDonation();
+    await loadData();
+    navigate(location.hash.slice(1) || (isAdmin() ? 'dashboard' : 'inicio'));
+  }
+
+  function endSession() {
+    closeModal(); $('#toast-container').replaceChildren();
+    currentUser = null; accessToken = '';
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch {}
+    data = { donors:[], donations:[], users:[] };
+    $('#app').hidden = true; $('#donor-portal').hidden = true; $('#login-screen').hidden = false;
+    for (const selector of ['#users-body','#donors-body','#donations-body','#recent-body','#dashboard-stats','#user-stats','#review-summary','#donation-donor','#modal-content','#donor-history-list','#donor-recent-list','#donor-latest-content','#donor-home-impact','#donor-impact-numbers']) $(selector).innerHTML = '';
+    $('#personal-profile-form').reset(); $('#personal-filter-form').reset();
+    resetPersonalDonation(); resetDonation();
+    setDonorMenu(false); setDonorAccount(false); setSidebar(false); setNotifications(false);
+    history.replaceState(null,'',location.pathname + location.search);
+    document.title = 'DonativoSeguro | Iniciar sesión';
+  }
+
+  async function logout() {
+    try { await api('/auth/logout',{method:'POST'}); endSession(); toast('Sesión cerrada correctamente'); }
+    catch (error) { toast(error.message,true); }
+  }
+
+  async function submitWork(form, errorSelector, work) {
+    const button = form.querySelector('button[type="submit"]');
+    if (button?.disabled) return;
+    if (button) button.disabled = true;
+    if (errorSelector) $(errorSelector).hidden = true;
+    try { await work(); }
+    catch (error) { if (errorSelector && $(errorSelector)) showError(errorSelector,error.message); else toast(error.message,true); }
+    finally { if (button?.isConnected) button.disabled = false; }
+  }
   function escapeHTML(value) {
     return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   }
@@ -26,11 +128,6 @@
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
 
-  function daysAgo(days) {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return localDate(date);
-  }
 
   function formatDate(value) {
     return value ? dateFormat.format(new Date(`${value}T12:00:00`)) : 'Sin acceso';
@@ -44,99 +141,6 @@
     return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   }
 
-  function makeId(prefix) {
-    return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  }
-
-  function demoData() {
-    const donors = [
-      { id: 'd1', name: 'Mariana López', email: 'mariana.lopez@example.com', phone: '5512345678', person: 'Persona física', date: daysAgo(45) },
-      { id: 'd2', name: 'Carlos Hernández', email: 'carlos.h@example.com', phone: '5523456789', person: 'Persona física', date: daysAgo(38) },
-      { id: 'd3', name: 'Fundación Esperanza', email: 'contacto@esperanza.example', phone: '5534567890', person: 'Persona moral', date: daysAgo(34) },
-      { id: 'd4', name: 'Ana Martínez', email: 'ana.martinez@example.com', phone: '5545678901', person: 'Persona física', date: daysAgo(21) },
-      { id: 'd5', name: 'José Ramírez', email: 'jose.ramirez@example.com', phone: '5556789012', person: 'Persona física', date: daysAgo(18) },
-      { id: 'd6', name: 'Alimentos del Valle', email: 'ayuda@valle.example', phone: '5567890123', person: 'Persona moral', date: daysAgo(15) },
-      { id: 'd7', name: 'Sofía García', email: 'sofia.garcia@example.com', phone: '5578901234', person: 'Persona física', date: daysAgo(10) },
-      { id: 'd8', name: 'Miguel Torres', email: 'miguel.torres@example.com', phone: '5589012345', person: 'Persona física', date: daysAgo(8) }
-    ];
-    const users = [
-      { id: 'u1', name: 'Gabriel Mendoza', email: 'admin@donativoseguro.com', password: '123456', role: 'Administrador', active: true, lastAccess: daysAgo(0) },
-      { id: 'u2', name: 'Valeria Sánchez', email: 'usuario@donativoseguro.com', password: '123456', role: 'Usuario', active: true, lastAccess: daysAgo(1) },
-      { id: 'u3', name: 'Daniel Rodríguez', email: 'daniel@donativoseguro.com', password: '123456', role: 'Administrador', active: true, lastAccess: daysAgo(3) },
-      { id: 'u4', name: 'Lucía Fernández', email: 'lucia@donativoseguro.com', password: '123456', role: 'Usuario', active: false, lastAccess: daysAgo(12) },
-      { id: 'u5', name: 'Mateo Ruiz', email: 'mateo@donativoseguro.com', password: '123456', role: 'Usuario', active: true, lastAccess: daysAgo(2) }
-    ];
-    const donations = [
-      { id: 'DON-0008', donorId: 'd1', type: 'Efectivo', amount: 2500, description: '', date: daysAgo(0), notes: 'Aportación para el programa de apoyo comunitario.', registeredBy: 'Gabriel Mendoza', status: 'Verificado' },
-      { id: 'DON-0007', donorId: 'd2', type: 'Especie', amount: 0, description: '10 cajas de alimentos', date: daysAgo(1), notes: 'Alimentos no perecederos para familias de la comunidad.', registeredBy: 'Valeria Sánchez', status: 'Registrado' },
-      { id: 'DON-0006', donorId: 'd3', type: 'Efectivo', amount: 15000, description: '', date: daysAgo(2), notes: 'Apoyo a la campaña de educación.', registeredBy: 'Gabriel Mendoza', status: 'Verificado' },
-      { id: 'DON-0005', donorId: 'd4', type: 'Especie', amount: 0, description: '25 kits escolares', date: daysAgo(3), notes: 'Cada kit contiene cuadernos, lápices y colores.', registeredBy: 'Valeria Sánchez', status: 'Verificado' },
-      { id: 'DON-0004', donorId: 'd5', type: 'Efectivo', amount: 1800, description: '', date: daysAgo(4), notes: 'Donativo destinado a necesidades prioritarias.', registeredBy: 'Gabriel Mendoza', status: 'Registrado' },
-      { id: 'DON-0003', donorId: 'd6', type: 'Especie', amount: 0, description: '50 despensas básicas', date: daysAgo(7), notes: 'Entrega realizada en el centro de acopio.', registeredBy: 'Daniel Rodríguez', status: 'Verificado' },
-      { id: 'DON-0002', donorId: 'd7', type: 'Efectivo', amount: 3500, description: '', date: daysAgo(8), notes: '', registeredBy: 'Mateo Ruiz', status: 'Verificado' },
-      { id: 'DON-0001', donorId: 'd8', type: 'Efectivo', amount: 1200, description: '', date: daysAgo(35), notes: 'Aportación para el fondo comunitario.', registeredBy: 'Valeria Sánchez', status: 'Verificado' }
-    ];
-    donations.forEach((donation) => { donation.donorName = donors.find((donor) => donor.id === donation.donorId).name; });
-    return { donors, users, donations, nextDonation: 9 };
-  }
-
-  function readStorage(key) {
-    try { return JSON.parse(localStorage.getItem(key)); }
-    catch { storageWarning = true; return null; }
-  }
-
-  function writeStorage(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); }
-    catch {
-      if (!storageWarning) toast('No se pudo guardar en el navegador. Los cambios durarán solo esta sesión.', true);
-      storageWarning = true;
-    }
-  }
-
-  const storedData = readStorage(STORAGE_KEY);
-  let data = storedData && Array.isArray(storedData.donors) && Array.isArray(storedData.users) && Array.isArray(storedData.donations) && Number.isInteger(storedData.nextDonation) ? storedData : demoData();
-  migrateOwnership();
-
-  function migrateOwnership() {
-    if (data.schemaVersion >= 2) return;
-    if (!data.users.some((user) => user.email === 'mateo@donativoseguro.com')) {
-      data.users.push({ id: makeId('u'), name: 'Mateo Ruiz', email: 'mateo@donativoseguro.com', password: '123456', role: 'Usuario', active: true, lastAccess: '' });
-    }
-    // La versión anterior guardaba nombres, no IDs. Solo migramos coincidencias inequívocas.
-    data.donations.forEach((donation) => {
-      const matches = data.users.filter((user) => user.name === donation.registeredBy);
-      donation.createdById ??= matches.length === 1 ? matches[0].id : null;
-      donation.ownerId ??= donation.createdById;
-    });
-    data.donors.forEach((donor) => {
-      const related = data.donations.filter((donation) => donation.donorId === donor.id);
-      const owners = [...new Set(related.map((donation) => donation.ownerId))];
-      donor.ownerId ??= owners.length === 1 ? owners[0] : null;
-    });
-    data.schemaVersion = 2;
-    persist();
-  }
-
-  function persist() { writeStorage(STORAGE_KEY, data); }
-  function isAdmin() { return currentUser?.active && currentUser.role === 'Administrador'; }
-  function canAccess(record) { return !!currentUser?.active && !!record && (isAdmin() || record.ownerId === currentUser.id); }
-  function visibleDonors() { return data.donors.filter(canAccess); }
-  function visibleDonations() { return data.donations.filter(canAccess); }
-  function ownerName(id) { return data.users.find((user) => user.id === id)?.name || 'Sin asignar'; }
-  function denyAccess() { toast('Este registro no está disponible en tu espacio.', true); }
-  function authorizedDonor(id) {
-    const donor = data.donors.find((item) => item.id === id);
-    if (!canAccess(donor)) { denyAccess(); return null; }
-    return donor;
-  }
-  function authorizedDonation(id) {
-    const donation = data.donations.find((item) => item.id === id);
-    if (!canAccess(donation)) { denyAccess(); return null; }
-    return donation;
-  }
-  function donorName(donation) { return data.donors.find((donor) => donor.id === donation.donorId)?.name || donation.donorName; }
-  function donationValue(donation) { return donation.type === 'Efectivo' ? money.format(donation.amount) : donation.description; }
-  function sortedDonations() { return visibleDonations().sort((a, b) => b.date.localeCompare(a.date) || Number(b.id.slice(4)) - Number(a.id.slice(4))); }
 
   function badge(value) {
     const classes = { Activo: 'success', Inactivo: 'inactive', Verificado: 'success', Registrado: 'pending', Efectivo: 'type-cash', Especie: 'type-kind', Administrador: 'blue', Usuario: 'purple' };
@@ -261,13 +265,9 @@
     $('#header-section').textContent = pageTitles[currentPage];
   }
 
-  function renderAll() {
-    if (!currentUser) return;
-    renderAccount(); renderDashboard(); renderDonors(); renderDonations(); renderUsers();
-  }
-
   function navigate(page, updateHash = true) {
     if (!currentUser) return;
+    if (!isAdmin()) return navigateDonor(page);
     if (page.startsWith('/')) {
       const [, workspace, section] = page.split('/');
       if (workspace !== (isAdmin() ? 'administracion' : 'mi-espacio')) {
@@ -306,65 +306,19 @@
     $('#notification-toggle').setAttribute('aria-expanded', String(open));
   }
 
-  function saveSession() {
-    try { sessionStorage.setItem(TAB_SESSION_KEY, JSON.stringify({ usuario: currentUser.id, sesionActiva: true })); }
-    catch { storageWarning = true; }
-  }
-
-  function startSession(user) {
-    currentUser = user;
-    resetDonation();
-    $('#filter-form').reset();
-    $('#donor-search').value = '';
-    $('#modal-content').innerHTML = '';
-    $('#toast-container').innerHTML = '';
-    user.lastAccess = localDate();
-    persist(); saveSession();
-    $('#login-screen').hidden = true;
-    $('#app').hidden = false;
-    $('#login-form').reset();
-    $('#login-password').type = 'password';
-    $('#toggle-password').setAttribute('aria-label', 'Mostrar contraseña');
-    $('#toggle-password').setAttribute('aria-pressed', 'false');
-    $('#login-error').hidden = true;
-    $('#caps-lock-hint').hidden = true;
-    $('#demo-selection').hidden = true;
-    $('#demo-access').open = false;
-    renderAll();
-    navigate(location.hash.slice(1) || 'dashboard');
-  }
-
-  function logout() {
-    closeModal();
-    currentUser = null;
-    try { sessionStorage.removeItem(TAB_SESSION_KEY); localStorage.removeItem(SESSION_KEY); } catch { /* La sesión en memoria también se elimina. */ }
-    $('#app').hidden = true;
-    $('#login-screen').hidden = false;
-    $('#donation-form').reset();
-    resetDonation();
-    $('#filter-form').reset();
-    $('#donor-search').value = '';
-    for (const selector of ['#users-body', '#user-stats', '#donors-body', '#donations-body', '#recent-body', '#dashboard-stats', '#modal-content', '#review-summary', '#donation-donor', '#notification-text', '#account-name', '#account-role', '#account-avatar']) $(selector).innerHTML = '';
-    $('#owner-filter').innerHTML = '<option value="">Todo el equipo</option>';
-    setSidebar(false);
-    setNotifications(false);
-    history.replaceState(null, '', location.pathname + location.search);
-    document.title = 'DonativoSeguro | Gestión de donativos';
-    $('#login-email').focus();
-    toast('Sesión cerrada correctamente');
-  }
-
   function toast(message, error = false) {
     const element = document.createElement('div');
     element.className = `toast${error ? ' error' : ''}`;
     element.innerHTML = `${icon(error ? 'close' : 'check')}<span>${escapeHTML(message)}</span><button class="icon-button" aria-label="Cerrar notificación">${icon('close')}</button>`;
     element.querySelector('button').addEventListener('click', () => element.remove());
     $('#toast-container').append(element);
+    while ($('#toast-container').children.length > 3) $('#toast-container').firstElementChild.remove();
     setTimeout(() => element.remove(), 5500);
   }
 
   function openModal(title, content) {
     modalTrigger = document.activeElement;
+    $('#modal').classList.toggle('donor-modal', !!currentUser && !isAdmin());
     $('#modal-title').textContent = title;
     $('#modal-content').innerHTML = content;
     if (!$('#modal').open) $('#modal').showModal();
@@ -387,35 +341,24 @@
     element.hidden = false;
   }
 
-  function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value); }
 
   function donorForm(id = null) {
-    if (!currentUser) return;
+    if (!isAdmin()) return denyAccess();
     const donor = id ? authorizedDonor(id) : null;
     if (id && !donor) return;
-    openModal(donor ? 'Editar donante' : 'Nuevo donante', `<p class="modal-intro">Cada persona es parte del cambio. Completa los campos obligatorios.</p><form id="donor-form"><div class="form-grid"><div class="field full"><label for="donor-name">Nombre completo *</label><input id="donor-name" name="name" value="${escapeHTML(donor?.name || '')}" maxlength="100" autocomplete="name" required></div><div class="field full"><label for="donor-email">Correo electrónico *</label><input id="donor-email" name="email" type="email" value="${escapeHTML(donor?.email || '')}" maxlength="150" autocomplete="email" required></div><div class="field"><label for="donor-phone">Teléfono *</label><input id="donor-phone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10" title="Ingresa de 1 a 10 dígitos, sin espacios ni símbolos." value="${escapeHTML(donor?.phone || '')}" autocomplete="tel" required></div><div class="field"><label for="donor-person">Tipo de persona *</label><select id="donor-person" name="person" required><option${donor?.person === 'Persona física' ? ' selected' : ''}>Persona física</option><option${donor?.person === 'Persona moral' ? ' selected' : ''}>Persona moral</option></select></div></div>${modalActions(donor ? 'Guardar cambios' : 'Guardar donante')}</form>`);
+    openModal(donor ? 'Editar donante' : 'Nuevo donante', `<p class="modal-intro">Cada persona es parte del cambio. Completa los campos obligatorios.</p><form method="post" id="donor-form"><div class="form-grid"><div class="field full"><label for="donor-name">Nombre completo *</label><input id="donor-name" name="name" value="${escapeHTML(donor?.name || '')}" maxlength="100" autocomplete="name" required></div><div class="field full"><label for="donor-email">Correo electrónico *</label><input id="donor-email" name="email" type="email" value="${escapeHTML(donor?.email || '')}" maxlength="150" autocomplete="email" required></div><div class="field"><label for="donor-phone">Teléfono *</label><input id="donor-phone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="Ingresa de 1 a 10 dígitos, sin espacios ni símbolos." value="${escapeHTML(donor?.phone || '')}" autocomplete="tel" required></div><div class="field"><label for="donor-person">Tipo de persona *</label><select id="donor-person" name="person" required><option${donor?.person === 'Persona física' ? ' selected' : ''}>Persona física</option><option${donor?.person === 'Persona moral' ? ' selected' : ''}>Persona moral</option></select></div></div>${modalActions(donor ? 'Guardar cambios' : 'Guardar donante')}</form>`);
     if (isAdmin()) {
       const ownerId = donor ? donor.ownerId : currentUser.id;
       $('#donor-form .form-grid').insertAdjacentHTML('beforeend', `<div class="field full"><label for="donor-owner">Responsable del donante</label><select id="donor-owner" name="ownerId"><option value="">Sin asignar · solo administración</option>${data.users.map((user) => `<option value="${escapeHTML(user.id)}"${user.id === ownerId ? ' selected' : ''}>${escapeHTML(user.name)}${user.active ? '' : ' (inactivo)'}</option>`).join('')}</select><p class="field-hint">El responsable verá este donante en su cuenta. Si lo cambias, todos sus donativos asociados se trasladarán al nuevo espacio.</p></div>`);
     }
     $('#donor-form').addEventListener('submit', (event) => {
       event.preventDefault();
-      const existing = id ? data.donors.find((item) => item.id === id) : null;
-      if (!currentUser || (id && !canAccess(existing))) return denyAccess();
-      const values = Object.fromEntries(new FormData(event.target));
-      values.name = values.name.trim(); values.email = values.email.trim().toLowerCase();
-      values.ownerId = isAdmin() ? values.ownerId || null : currentUser.id;
-      if (values.ownerId && !data.users.some((user) => user.id === values.ownerId)) return showError('#modal-error', 'Selecciona un responsable válido.');
-      if (!values.name || !validEmail(values.email) || !/^\d{1,10}$/.test(values.phone)) return showError('#modal-error', 'Completa el nombre, un correo válido y un teléfono de máximo 10 dígitos.');
-      if (data.donors.some((item) => item.id !== id && item.ownerId === values.ownerId && item.email.toLowerCase() === values.email)) return showError('#modal-error', 'Ya existe un donante con este correo en el espacio seleccionado.');
-      if (existing) {
-        if (isAdmin() && existing.ownerId !== values.ownerId) data.donations.filter((donation) => donation.donorId === id).forEach((donation) => { donation.ownerId = values.ownerId; });
-        Object.assign(existing, values);
-      } else data.donors.unshift({ ...values, id: makeId('d'), createdById: currentUser.id, date: localDate() });
-      persist(); renderAll(); closeModal();
-      if (currentPage === 'registro' && !donor) $('#donation-donor').value = data.donors[0].id;
-      updateOwnerHint();
-      toast(donor ? 'Donante actualizado correctamente' : 'Donante registrado correctamente');
+      submitWork(event.target, '#modal-error', async () => {
+        const values = Object.fromEntries(new FormData(event.target));
+        values.ownerId ||= null;
+        await api('/donantes' + (id ? '/' + encodeURIComponent(id) : ''), { method:id ? 'PUT':'POST', body:values });
+        await loadData(); closeModal(); toast(id ? 'Donante actualizado correctamente':'Donante registrado correctamente');
+      });
     });
   }
 
@@ -426,18 +369,33 @@
     openModal('Información del donante', `<div class="detail-hero"><span class="avatar">${escapeHTML(initials(donor.name))}</span><div><strong>${escapeHTML(donor.name)}</strong><p>${escapeHTML(donor.person)}</p></div></div><dl class="detail-list"><div><dt>Correo electrónico</dt><dd>${escapeHTML(donor.email)}</dd></div><div><dt>Teléfono</dt><dd>${escapeHTML(donor.phone)}</dd></div><div><dt>Fecha de registro</dt><dd>${formatDate(donor.date)}</dd></div><div><dt>Estado</dt><dd>${badge('Activo')}</dd></div><div class="full"><dt>Donativos asociados</dt><dd>${count} aportes registrados</dd></div></dl><div class="form-actions"><button class="button secondary" data-close-modal>Cerrar</button></div>`);
   }
 
-  function deleteDonor(id) {
-    const donor = authorizedDonor(id);
-    if (!donor) return;
-    openModal('Eliminar donante', `<form id="delete-donor-form"><p class="confirm-copy">¿Deseas eliminar a <strong>${escapeHTML(donor.name)}</strong> del directorio? Sus donativos anteriores se conservarán en el historial con el nombre del donante.</p>${modalActions('Eliminar donante', true)}</form>`);
-    $('#delete-donor-form').addEventListener('submit', (event) => {
+  function userForm(id = null) {
+    if (!isAdmin()) return;
+    const user = data.users.find((item) => item.id === id);
+    const self = user?.id === currentUser.id;
+    openModal(user ? 'Editar usuario' : 'Nuevo usuario', `<p class="modal-intro">${user ? 'Actualiza los datos y permisos de esta cuenta.' : 'Invita a una nueva persona a formar parte del equipo.'}</p><form method="post" id="user-form"><div class="form-grid"><div class="field full"><label for="user-name">Nombre *</label><input id="user-name" name="name" value="${escapeHTML(user?.name || '')}" maxlength="100" required></div><div class="field full"><label for="user-email">Correo electrónico *</label><input id="user-email" name="email" type="email" value="${escapeHTML(user?.email || '')}" maxlength="150" required></div><div class="field full"><label for="user-password">Contraseña ${user ? '<span class="optional">(dejar vacía para conservarla)</span>' : '*'}</label><input id="user-password" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="Mínimo 12 caracteres" ${user ? '' : 'required'}></div><div class="field full"><label for="user-role">Rol *</label><select id="user-role" name="role" ${self ? 'disabled' : ''}><option value="Usuario"${user?.role === 'Usuario' ? ' selected' : ''}>Usuario</option><option value="Administrador"${user?.role === 'Administrador' ? ' selected' : ''}>Administrador</option></select>${self ? '<p class="field-help modal-intro">Tu propio rol se conserva para mantener el acceso de administración.</p>' : ''}</div></div>${modalActions(user ? 'Guardar cambios' : 'Crear usuario')}</form>`);
+    $('#user-form').addEventListener('submit', (event) => {
       event.preventDefault();
-      const existing = data.donors.find((item) => item.id === id);
-      if (!canAccess(existing)) return denyAccess();
-      data.donations.filter((donation) => donation.donorId === id).forEach((donation) => { donation.donorName = existing.name; });
-      data.donors = data.donors.filter((item) => item.id !== id);
-      persist(); renderAll(); closeModal(); toast('Donante eliminado del directorio');
+      submitWork(event.target, '#modal-error', async () => {
+        const values = Object.fromEntries(new FormData(event.target));
+        if (self) values.role = user.role;
+        if (id && !values.password) delete values.password;
+        await api('/usuarios' + (id ? '/' + encodeURIComponent(id) : ''), { method:id ? 'PUT':'POST', body:values });
+        await loadData(); closeModal(); toast(id ? 'Usuario actualizado correctamente':'Cuenta creada. Ya puede iniciar sesión.');
+      });
     });
+  }
+
+  async function donationDetails(id) {
+    const { donation } = await api('/donativos/' + encodeURIComponent(id));
+    if (!isAdmin()) return personalDonationDetails(donation);
+    if (!donation) return;
+    openModal('Detalle del donativo', `<div class="detail-hero"><span class="quick-icon teal">${icon(donation.type === 'Efectivo' ? 'money' : 'box')}</span><div><strong>${escapeHTML(donation.id)}</strong><p>Un aporte que hace la diferencia</p></div></div><dl class="detail-list"><div><dt>Donante</dt><dd>${escapeHTML(donorName(donation))}</dd></div><div><dt>Tipo</dt><dd>${badge(donation.type)}</dd></div><div><dt>${donation.type === 'Efectivo' ? 'Cantidad (MXN)' : 'Descripción del donativo'}</dt><dd>${escapeHTML(donationValue(donation))}</dd></div><div><dt>Fecha</dt><dd>${formatDate(donation.date)}</dd></div><div><dt>Registrado por</dt><dd>${escapeHTML(donation.registeredBy)}</dd></div><div><dt>Estado</dt><dd>${badge(donation.status)}</dd></div><div class="full"><dt>Observaciones</dt><dd>${escapeHTML(donation.notes || 'Sin observaciones adicionales.')}</dd></div></dl><div class="form-actions"><button class="button secondary" data-close-modal>Cerrar</button></div>`);
+    if (isAdmin()) {
+      $('#modal-content .detail-list').insertAdjacentHTML('beforeend', `<div><dt>Responsable del espacio</dt><dd>${escapeHTML(ownerName(donation.ownerId))}</dd></div>`);
+      if (donation.status === 'Registrado') $('#modal-content .form-actions').insertAdjacentHTML('beforeend', `<button type="button" class="button primary" data-action="verify-donation" data-id="${escapeHTML(id)}">${icon('check')} Verificar donativo</button>`);
+    }
+    if (donation.verifiedBy) $('#modal-content .detail-list').insertAdjacentHTML('beforeend', `<div><dt>Verificado por</dt><dd>${escapeHTML(donation.verifiedBy)} · ${formatDate(donation.verifiedAt)}</dd></div>`);
   }
 
   function updateDonationType() {
@@ -465,180 +423,258 @@
       : 'El aporte quedará en tu espacio, pendiente de verificación por administración.';
   }
 
-  function donationDetails(id) {
-    const donation = authorizedDonation(id);
-    if (!donation) return;
-    openModal('Detalle del donativo', `<div class="detail-hero"><span class="quick-icon teal">${icon(donation.type === 'Efectivo' ? 'money' : 'box')}</span><div><strong>${escapeHTML(donation.id)}</strong><p>Un aporte que hace la diferencia</p></div></div><dl class="detail-list"><div><dt>Donante</dt><dd>${escapeHTML(donorName(donation))}</dd></div><div><dt>Tipo</dt><dd>${badge(donation.type)}</dd></div><div><dt>${donation.type === 'Efectivo' ? 'Cantidad (MXN)' : 'Descripción del donativo'}</dt><dd>${escapeHTML(donationValue(donation))}</dd></div><div><dt>Fecha</dt><dd>${formatDate(donation.date)}</dd></div><div><dt>Registrado por</dt><dd>${escapeHTML(donation.registeredBy)}</dd></div><div><dt>Estado</dt><dd>${badge(donation.status)}</dd></div><div class="full"><dt>Observaciones</dt><dd>${escapeHTML(donation.notes || 'Sin observaciones adicionales.')}</dd></div></dl><div class="form-actions"><button class="button secondary" data-close-modal>Cerrar</button></div>`);
-    if (isAdmin()) {
-      $('#modal-content .detail-list').insertAdjacentHTML('beforeend', `<div><dt>Responsable del espacio</dt><dd>${escapeHTML(ownerName(donation.ownerId))}</dd></div>`);
-      if (donation.status === 'Registrado') $('#modal-content .form-actions').insertAdjacentHTML('beforeend', `<button type="button" class="button primary" data-action="verify-donation" data-id="${escapeHTML(id)}">${icon('check')} Verificar donativo</button>`);
-    }
-    if (donation.verifiedBy) $('#modal-content .detail-list').insertAdjacentHTML('beforeend', `<div><dt>Verificado por</dt><dd>${escapeHTML(donation.verifiedBy)} · ${formatDate(donation.verifiedAt)}</dd></div>`);
-  }
 
-  function verifyDonation(id) {
-    if (!isAdmin()) return denyAccess();
-    const donation = authorizedDonation(id);
-    if (!donation || donation.status !== 'Registrado') return;
-    donation.status = 'Verificado';
-    donation.verifiedBy = currentUser.name;
-    donation.verifiedById = currentUser.id;
-    donation.verifiedAt = localDate();
-    persist(); renderAll(); closeModal();
-    toast('Donativo verificado. Su responsable verá el estado actualizado.');
-  }
+  // Portal personal y operaciones de la API.
 
-  function userForm(id = null) {
-    if (!isAdmin()) return;
-    const user = data.users.find((item) => item.id === id);
-    const self = user?.id === currentUser.id;
-    openModal(user ? 'Editar usuario' : 'Nuevo usuario', `<p class="modal-intro">${user ? 'Actualiza los datos y permisos de esta cuenta.' : 'Invita a una nueva persona a formar parte del equipo.'}</p><form id="user-form"><div class="form-grid"><div class="field full"><label for="user-name">Nombre *</label><input id="user-name" name="name" value="${escapeHTML(user?.name || '')}" maxlength="100" required></div><div class="field full"><label for="user-email">Correo electrónico *</label><input id="user-email" name="email" type="email" value="${escapeHTML(user?.email || '')}" maxlength="150" required></div><div class="field full"><label for="user-password">Contraseña ${user ? '<span class="optional">(dejar vacía para conservarla)</span>' : '*'}</label><input id="user-password" name="password" type="password" minlength="6" maxlength="100" autocomplete="new-password" placeholder="Mínimo 6 caracteres" ${user ? '' : 'required'}></div><div class="field full"><label for="user-role">Rol *</label><select id="user-role" name="role" ${self ? 'disabled' : ''}><option value="Usuario"${user?.role === 'Usuario' ? ' selected' : ''}>Usuario</option><option value="Administrador"${user?.role === 'Administrador' ? ' selected' : ''}>Administrador</option></select>${self ? '<p class="field-help modal-intro">Tu propio rol se conserva para mantener el acceso de administración.</p>' : ''}</div></div>${modalActions(user ? 'Guardar cambios' : 'Crear usuario')}</form>`);
-    $('#user-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      if (!isAdmin()) return;
-      const values = Object.fromEntries(new FormData(event.target));
-      values.name = values.name.trim(); values.email = values.email.trim().toLowerCase();
-      values.role = self ? user.role : values.role;
-      if (!values.name || !validEmail(values.email)) return showError('#modal-error', 'Ingresa un nombre y un correo electrónico válido.');
-      if ((!user || values.password) && values.password.trim().length < 6) return showError('#modal-error', 'La contraseña debe contener al menos 6 caracteres.');
-      if (!['Administrador', 'Usuario'].includes(values.role)) return showError('#modal-error', 'Selecciona un rol válido.');
-      if (data.users.some((item) => item.id !== id && item.email.toLowerCase() === values.email)) return showError('#modal-error', 'Ya existe una cuenta con este correo electrónico.');
-      if (user) { if (!values.password) delete values.password; Object.assign(user, values); }
-      else data.users.push({ ...values, id: makeId('u'), active: true, lastAccess: '' });
-      persist(); saveSession(); renderAll(); closeModal(); toast(user ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
+  function setDonorMenu(open) {
+    $('#donor-nav').classList.toggle('open', open);
+    $('#donor-menu-toggle').setAttribute('aria-expanded', String(open));
+  }
+  function setDonorAccount(open) {
+    $('#donor-account-menu').hidden = !open;
+    $('#donor-account-toggle').setAttribute('aria-expanded', String(open));
+  }
+  function navigateDonor(page) {
+    if (!currentUser) return;
+    const requested = page.replace(/^\/?mi-espacio\//, '');
+    donorPage = Object.hasOwn(donorPages, requested) ? requested : 'inicio';
+    $$('.donor-page').forEach(section => { section.hidden = section.id !== 'donor-page-' + donorPage; });
+    $$('#donor-nav [data-donor-page]').forEach(link => {
+      link.classList.toggle('active', link.dataset.donorPage === donorPage);
+      if (link.dataset.donorPage === donorPage) link.setAttribute('aria-current','page');
+      else link.removeAttribute('aria-current');
+    });
+    history.replaceState(null,'','#/mi-espacio/' + donorPage);
+    document.title = donorPages[donorPage] + ' | DonativoSeguro';
+    setDonorMenu(false); setDonorAccount(false);
+    $('#donor-main').focus({preventScroll:true}); window.scrollTo(0,0);
+  }
+  function personalEmpty(filtered = false) {
+    return `<div class="donor-empty">${icon('heart')}<h3>${filtered ? 'No hay aportaciones con estos filtros' : 'Tu primera aportación comienza aquí'}</h3><p>${filtered ? 'Prueba otra fecha o tipo de donativo.' : 'Cuando registres un donativo, podrás seguir su avance en este espacio.'}</p>${filtered ? '' : '<button class="donor-button" data-donor-page="aportar">Hacer mi primer donativo</button>'}</div>`;
+  }
+  function personalHistory(items) {
+    return items.map(d => `<article class="donor-history-item ${d.type === 'Especie' ? 'kind' : ''}"><span class="donor-soft-icon">${icon(d.type === 'Efectivo' ? 'money' : 'box')}</span><div class="donor-history-info"><h3>${d.type === 'Efectivo' ? 'Aportación en efectivo' : 'Aportación en especie'}</h3><p>${escapeHTML(d.id)} <span class="donor-mobile-date">· ${formatDate(d.date)}</span></p></div><strong class="donor-history-amount">${escapeHTML(donationValue(d))}</strong><span class="donor-history-date">${formatDate(d.date)}</span>${badge(d.status)}<button class="donor-link" data-action="view-donation" data-id="${escapeHTML(d.id)}" aria-label="Ver detalle de ${escapeHTML(d.id)}">Ver detalle ${icon('arrow')}</button></article>`).join('');
+  }
+  function renderPersonalHistory() {
+    if (!currentUser || isAdmin()) return;
+    const filters = Object.fromEntries(new FormData($('#personal-filter-form')));
+    const items = sortedDonations().filter(d => (!filters.type || d.type === filters.type) && (!filters.date || d.date === filters.date));
+    $('#donor-history-count').textContent = `${items.length} de ${data.donations.length} aportaciones`;
+    $('#donor-history-list').innerHTML = items.length ? personalHistory(items) : personalEmpty(!!filters.type || !!filters.date);
+  }
+  function impactItem(label, value, symbol, note = '') {
+    return `<div class="donor-impact-item"><span class="donor-soft-icon">${icon(symbol)}</span><div><span>${label}</span><strong>${escapeHTML(value)}</strong>${note ? `<p>${note}</p>` : ''}</div></div>`;
+  }
+  function personalProgress(count) {
+    const goal = Math.max(5, Math.ceil((count + 1) / 5) * 5);
+    return `<div class="donor-progress-label"><strong>Cada aporte suma</strong><span>${count} de ${goal}</span></div><progress class="donor-progress" value="${count}" max="${goal}" aria-label="Avance hacia ${goal} aportaciones">${count} de ${goal}</progress><p class="donor-progress-goal">Tu siguiente meta: ${goal} aportaciones.</p>`;
+  }
+  function renderPortal() {
+    const donations = sortedDonations();
+    const cash = donations.filter(d => d.type === 'Efectivo').reduce((sum,d) => sum + d.amount,0);
+    const kinds = donations.filter(d => d.type === 'Especie').length;
+    const verified = donations.filter(d => d.status === 'Verificado').length;
+    $('#donor-greeting').textContent = `Hola, ${currentUser.name.split(' ')[0]}. Este es tu espacio.`;
+    $('#donor-nav-name').textContent = currentUser.name.split(' ')[0];
+    $('#donor-nav-avatar').textContent = initials(currentUser.name);
+    const stats = impactItem('Total aportado en efectivo',money.format(cash),'money','MXN registrados') + impactItem('Aportaciones realizadas',String(donations.length),'heart') + impactItem('Donativos en especie',String(kinds),'box');
+    $('#donor-home-impact').innerHTML = stats;
+    $('#donor-impact-numbers').innerHTML = stats + impactItem('Aportaciones verificadas',String(verified),'check');
+    $('#donor-history-summary').textContent = `${donations.length} aportaciones · ${money.format(cash)} MXN en efectivo · ${kinds} en especie`;
+    $('#donor-home-progress').innerHTML = personalProgress(donations.length);
+    $('#donor-journey-progress').innerHTML = personalProgress(donations.length);
+    const latest = donations[0];
+    $('#donor-latest-content').innerHTML = latest ? `<p class="donor-latest-type">${escapeHTML(latest.type)}</p><strong class="donor-latest-value ${latest.type === 'Especie' ? 'kind-value' : ''}">${escapeHTML(donationValue(latest))}</strong><dl class="donor-latest-facts"><div><dt>Fecha de aportación</dt><dd>${formatDate(latest.date)}</dd></div><div><dt>Estado</dt><dd>${badge(latest.status)}</dd></div></dl><div class="donor-latest-footer"><span>${escapeHTML(latest.id)}</span><button class="donor-link" data-action="view-donation" data-id="${escapeHTML(latest.id)}">Ver detalle ${icon('arrow')}</button></div>` : personalEmpty();
+    $('#donor-recent-list').innerHTML = donations.length ? personalHistory(donations.slice(0,3)) : personalEmpty();
+    $('#donor-journey-timeline').innerHTML = [[1,'Tu primer paso','Una primera oportunidad para ayudar.'],[3,'Una ayuda constante','Tres aportaciones que suman.'],[5,'Una huella que crece','Cinco gestos de generosidad.']].map(([n,title,description]) => `<li class="${donations.length >= n ? 'reached' : ''}"><span>${donations.length >= n ? icon('check') : n}</span><strong>${title}</strong><p>${description}</p></li>`).join('');
+    $('#donor-profile-avatar').textContent = initials(currentUser.name);
+    $('#donor-profile-name').textContent = currentUser.name;
+    $('#donor-member-since').textContent = formatDate(currentUser.joinedAt);
+    $('#personal-name').value = currentUser.name;
+    $('#personal-email').value = currentUser.email;
+    $('#personal-phone').value = currentUser.phone || '';
+    renderPersonalHistory();
+  }
+  function updatePersonalType() {
+    const cash = $('#personal-donation-form input[name="type"]:checked').value === 'Efectivo';
+    $('#personal-amount-field').hidden = !cash; $('#personal-description-field').hidden = cash;
+    $('#personal-amount').disabled = !cash; $('#personal-amount').required = cash;
+    $('#personal-description').disabled = cash; $('#personal-description').required = !cash;
+    $('#personal-donation-error').hidden = true;
+  }
+  function resetPersonalDonation() {
+    $('#personal-donation-form').reset();
+    $('#personal-date').value = localDate(); $('#personal-date').max = localDate(); $('#personal-date').min = '2000-01-01';
+    $$('[data-amount]').forEach(button => button.setAttribute('aria-pressed','false'));
+    updatePersonalType();
+  }
+  function personalDonationDetails(d) {
+    const verified = d.status === 'Verificado';
+    openModal('El recorrido de tu aportación', `<p class="donor-receipt-label">${escapeHTML(d.id)} · ${escapeHTML(d.type)}</p><strong class="donor-receipt-value">${escapeHTML(donationValue(d))}</strong><dl class="donor-receipt-facts"><div><dt>Fecha de aportación</dt><dd>${formatDate(d.date)}</dd></div><div><dt>Estado actual</dt><dd>${badge(d.status)}</dd></div><div class="full"><dt>Tus observaciones</dt><dd>${escapeHTML(d.notes || 'Sin observaciones.')}</dd></div></dl><div class="donor-status-path"><h3>Así va tu ayuda</h3><ol><li class="done"><span>${icon('check')}</span><div><strong>Registrado</strong><p>Guardamos tu aportación.</p></div></li><li class="${verified ? 'done' : ''}"><span>${verified ? icon('check') : '2'}</span><div><strong>Revisión de recepción</strong><p>${verified ? 'Administración confirmó la aportación.' : 'Pendiente de confirmación por administración.'}</p></div></li><li class="${verified ? 'done' : ''}"><span>${verified ? icon('check') : '3'}</span><div><strong>Verificado</strong><p>${verified ? formatDate(d.verifiedAt) : 'Te mostraremos aquí cuando esté verificado.'}</p></div></li></ol></div><button type="button" class="donor-button" data-close-modal>Entendido</button>`);
+  }
+  function donationSuccess(d) {
+    openModal('Gracias por tu aportación', `<div class="donor-success"><span class="donor-success-mark">${icon('heart')}</span><h3>Tu ayuda ya tiene un lugar.</h3><p>Guardamos tu donativo. Administración revisará la información y podrás seguir su avance desde tu espacio.</p><span class="donor-success-folio">${escapeHTML(d.id)}</span><button class="donor-button" data-donor-page="donativos" data-close-modal>Ver mis donativos ${icon('arrow')}</button><button class="donor-link" data-donor-page="inicio" data-close-modal>Volver al inicio</button></div>`);
+  }
+  function deleteDonor(id) {
+    const donor = authorizedDonor(id);
+    if (!donor) return;
+    openModal('Eliminar del directorio', `<form method="post" id="delete-donor-form"><p class="modal-intro">¿Quieres retirar a <strong>${escapeHTML(donor.name)}</strong> del directorio? Su historial de donativos se conservará.</p>${modalActions('Eliminar donante',true)}</form>`);
+    $('#delete-donor-form').addEventListener('submit', event => {
+      event.preventDefault(); submitWork(event.target,'#modal-error',async () => {
+        await api('/donantes/' + encodeURIComponent(id),{method:'DELETE'});
+        await loadData(); closeModal(); toast('Donante retirado del directorio');
+      });
     });
   }
-
-  function toggleUser(id) {
+  async function verifyDonation(id) {
+    if (!isAdmin()) return denyAccess();
+    await api('/donativos/' + encodeURIComponent(id) + '/verificar',{method:'PATCH'});
+    await loadData(); closeModal(); toast('Donativo verificado correctamente.');
+  }
+  async function toggleUser(id) {
     if (!isAdmin()) return;
-    const user = data.users.find((item) => item.id === id);
+    const user = data.users.find(item => item.id === id);
     if (!user) return;
-    if (user.id === currentUser.id) return toast('No puedes desactivar tu propia cuenta mientras estás conectado.', true);
-    user.active = !user.active;
-    persist(); renderUsers(); toast(`Usuario ${user.active ? 'activado' : 'desactivado'} correctamente`);
+    await api('/usuarios/' + encodeURIComponent(id) + '/estado',{method:'PATCH',body:{active:!user.active}});
+    await loadData(); toast(`Cuenta ${user.active ? 'desactivada' : 'activada'} correctamente.`);
   }
 
-  $('#login-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    refreshData();
-    const email = $('#login-email').value.trim().toLowerCase();
-    const password = $('#login-password').value;
-    const user = data.users.find((item) => item.email.toLowerCase() === email && item.password === password);
-    if (!user) return showError('#login-error', 'El correo o la contraseña son incorrectos. Revisa los accesos de demostración.');
-    if (!user.active) return showError('#login-error', 'Esta cuenta está inactiva. Solicita su activación al administrador.');
-    startSession(user);
+  $('#login-form').addEventListener('submit', event => {
+    event.preventDefault(); submitWork(event.target,'#login-error',async () => {
+      const result = await api('/auth/login',{method:'POST',body:Object.fromEntries(new FormData(event.target))});
+      try { await startSession(result); } catch (error) { endSession(); throw error; }
+    });
   });
-
+  $('#setup-form').addEventListener('submit', event => {
+    event.preventDefault(); submitWork(event.target,'#setup-error',async () => {
+      const values = Object.fromEntries(new FormData(event.target));
+      await api('/auth/setup',{method:'POST',body:values});
+      event.target.reset(); event.target.hidden = true; $('#login-form').hidden = false;
+      $('.login-scope').hidden = false; $('.login-panel h2').textContent = 'Tu ayuda empieza aqu?.'; $('.login-subtitle').textContent = 'Inicia sesi?n y contin?a construyendo un impacto positivo.';
+      $('#login-email').value = values.email; $('#login-password').focus();
+      toast('Administrador creado. Inicia sesión con tu nueva cuenta.');
+    });
+  });
   $('#toggle-password').addEventListener('click', () => {
     const visible = $('#login-password').type === 'password';
     $('#login-password').type = visible ? 'text' : 'password';
-    $('#toggle-password').setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
-    $('#toggle-password').setAttribute('aria-pressed', String(visible));
+    $('#toggle-password').setAttribute('aria-label',visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    $('#toggle-password').setAttribute('aria-pressed',String(visible));
   });
-
-  $$('[data-demo]').forEach((button) => button.addEventListener('click', () => {
-    $('#login-email').value = `${button.dataset.demo}@donativoseguro.com`;
-    $('#login-password').value = '123456';
-    $('#login-error').hidden = true;
-    $('#demo-selection').textContent = 'Cuenta de ejemplo preparada. Presiona Iniciar sesión para entrar.';
-    $('#demo-selection').hidden = false;
-    $('#demo-access').open = false;
-    $('.login-submit').focus();
-  }));
-
-  $('#access-help').addEventListener('click', () => {
-    openModal('Tu acceso a DonativoSeguro', `<div class="access-explanation">${icon('shield')}<h3>Una cuenta, un espacio propio.</h3><p>El administrador de tu organización crea tu cuenta y te proporciona las credenciales. Él puede activar tu acceso o restablecer tu contraseña.</p><p>Si estás presentando este prototipo, despliega las cuentas de ejemplo en el inicio de sesión. No necesitas registrarte.</p></div><div class="form-actions"><button class="button primary" data-close-modal>Entendido</button></div>`);
-  });
-  $('#login-password').addEventListener('keyup', (event) => { $('#caps-lock-hint').hidden = !event.getModifierState('CapsLock'); });
+  $('#login-password').addEventListener('keyup', event => { $('#caps-lock-hint').hidden = !event.getModifierState('CapsLock'); });
   $('#login-form').addEventListener('input', () => { $('#login-error').hidden = true; });
+  $('#access-help').addEventListener('click', () => openModal('Tu acceso a DonativoSeguro', `<div class="access-explanation">${icon('shield')}<h3>Una cuenta, un espacio propio.</h3><p>El administrador de tu organización crea tu cuenta y te proporciona tus credenciales de forma privada.</p><p>Para activar tu acceso o restablecer tu contraseña, contacta a administración.</p></div><div class="form-actions"><button class="button primary" data-close-modal>Entendido</button></div>`));
 
-  document.addEventListener('click', (event) => {
+  const actions = {
+    'new-donor': () => { if (currentPage !== 'registro') { navigate('donantes'); } donorForm(); },
+    'edit-donor': donorForm, 'view-donor': donorDetails, 'delete-donor': deleteDonor,
+    'view-donation': donationDetails, 'verify-donation': verifyDonation,
+    'pending-donations': () => { $('#filter-form').reset(); $('#status-filter').value = 'Registrado'; renderDonations(); navigate('donativos'); },
+    'new-user': () => userForm(), 'edit-user': userForm, 'toggle-user': toggleUser
+  };
+  document.addEventListener('click', async event => {
     if (event.target.closest('[data-close-modal]')) closeModal();
     if (!event.target.closest('.notification-wrap')) setNotifications(false);
+    if (!event.target.closest('.donor-account')) setDonorAccount(false);
     const pageLink = event.target.closest('[data-page]');
-    if (pageLink) { event.preventDefault(); navigate(pageLink.dataset.page); }
-    const action = event.target.closest('[data-action]');
-    if (!action || !currentUser) return;
-    const id = action.dataset.id;
-    switch (action.dataset.action) {
-      case 'new-donor': if (currentPage !== 'registro') navigate('donantes'); donorForm(); break;
-      case 'edit-donor': donorForm(id); break;
-      case 'view-donor': donorDetails(id); break;
-      case 'delete-donor': deleteDonor(id); break;
-      case 'view-donation': donationDetails(id); break;
-      case 'verify-donation': verifyDonation(id); break;
-      case 'pending-donations': $('#filter-form').reset(); $('#status-filter').value = 'Registrado'; renderDonations(); navigate('donativos'); break;
-      case 'new-user': userForm(); break;
-      case 'edit-user': userForm(id); break;
-      case 'toggle-user': toggleUser(id); break;
+    if (pageLink && currentUser) { event.preventDefault(); navigate(pageLink.dataset.page); }
+    const donorLink = event.target.closest('[data-donor-page]');
+    if (donorLink && currentUser && !isAdmin()) { event.preventDefault(); navigateDonor(donorLink.dataset.donorPage); }
+    const amountButton = event.target.closest('[data-amount]');
+    if (amountButton) {
+      $('#personal-amount').value = amountButton.dataset.amount;
+      $$('[data-amount]').forEach(button => button.setAttribute('aria-pressed',String(button === amountButton)));
     }
+    const action = event.target.closest('[data-action]');
+    if (!action || !currentUser || action.disabled) return;
+    if (!isAdmin() && action.dataset.action !== 'view-donation') return denyAccess();
+    action.disabled = true;
+    try { await actions[action.dataset.action]?.(action.dataset.id); }
+    catch (error) { toast(error.message,true); }
+    finally { if (action.isConnected) action.disabled = false; }
   });
-
-  $('#donation-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!currentUser) return;
-    const values = Object.fromEntries(new FormData(event.target));
-    const donor = visibleDonors().find((item) => item.id === values.donor);
-    const cash = values.type === 'Efectivo';
-    const amount = cash ? Number(values.amount) : 0;
-    const parsedDate = new Date(`${values.date}T12:00:00`);
-    if (!donor) return showError('#donation-error', 'Selecciona un donante del directorio.');
-    if (!['Efectivo', 'Especie'].includes(values.type)) return showError('#donation-error', 'Selecciona un tipo de donativo válido.');
-    if (!values.date || !Number.isFinite(parsedDate.getTime()) || localDate(parsedDate) !== values.date || values.date > localDate() || values.date < '2000-01-01') return showError('#donation-error', 'Selecciona una fecha válida entre el año 2000 y hoy.');
-    if (cash && (!Number.isFinite(amount) || amount <= 0 || amount > 999999999.99 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.001)) return showError('#donation-error', 'Ingresa un monto positivo con un máximo de dos decimales.');
-    if (!cash && !values.description?.trim()) return showError('#donation-error', 'Describe el donativo en especie.');
-    data.donations.unshift({ id: `DON-${String(data.nextDonation++).padStart(4, '0')}`, donorId: donor.id, donorName: donor.name, ownerId: donor.ownerId, createdById: currentUser.id, type: values.type, amount, description: cash ? '' : values.description.trim(), date: values.date, notes: values.notes.trim(), registeredBy: currentUser.name, status: 'Registrado' });
-    persist(); resetDonation(); $('#filter-form').reset(); renderAll(); navigate('donativos'); toast('Donativo registrado correctamente');
+  function donationInput(form, personal) {
+    const values = Object.fromEntries(new FormData(form));
+    delete values.confirm;
+    if (!personal) { values.donorId = values.donor; delete values.donor; }
+    if (values.type === 'Efectivo') values.amount = Number(values.amount);
+    return values;
+  }
+  $('#donation-form').addEventListener('submit', event => {
+    event.preventDefault(); if (!isAdmin()) return;
+    submitWork(event.target,'#donation-error',async () => {
+      await api('/donativos',{method:'POST',body:donationInput(event.target,false)});
+      resetDonation(); $('#filter-form').reset(); await loadData(); navigate('donativos'); toast('Donativo registrado correctamente.');
+    });
   });
-
-  $$('#donation-form input[name="type"]').forEach((radio) => radio.addEventListener('change', updateDonationType));
-  $('#donation-donor').addEventListener('change', updateOwnerHint);
+  $('#personal-donation-form').addEventListener('submit', event => {
+    event.preventDefault(); if (!currentUser || isAdmin()) return;
+    submitWork(event.target,'#personal-donation-error',async () => {
+      const { donation } = await api('/donativos',{method:'POST',body:donationInput(event.target,true)});
+      resetPersonalDonation(); $('#personal-filter-form').reset(); await loadData(); navigateDonor('donativos'); donationSuccess(donation);
+    });
+  });
+  $('#personal-profile-form').addEventListener('submit', event => {
+    event.preventDefault(); if (!currentUser || isAdmin()) return;
+    submitWork(event.target,'#personal-profile-error',async () => {
+      await api('/auth/profile',{method:'PUT',body:Object.fromEntries(new FormData(event.target))});
+      await loadData(); toast('Tu perfil se actualizó correctamente.');
+    });
+  });
+  $$('#donation-form input[name="type"]').forEach(radio => radio.addEventListener('change',updateDonationType));
+  $$('#personal-donation-form input[name="type"]').forEach(radio => radio.addEventListener('change',updatePersonalType));
+  $('#personal-amount').addEventListener('input', () => $$('[data-amount]').forEach(button => button.setAttribute('aria-pressed',String(Number(button.dataset.amount) === Number($('#personal-amount').value)))));
+  $('#donation-donor').addEventListener('change',updateOwnerHint);
   $('#cancel-donation').addEventListener('click', () => { resetDonation(); navigate('dashboard'); });
-  $('#donor-search').addEventListener('input', renderDonors);
-  $('#filter-form').addEventListener('submit', (event) => event.preventDefault());
-  $('#filter-form').addEventListener('input', renderDonations);
-  $('#filter-form').addEventListener('change', renderDonations);
-  $('#filter-form').addEventListener('reset', () => setTimeout(renderDonations, 0));
-  $('#logout').addEventListener('click', logout);
+  $('#donor-search').addEventListener('input',renderDonors);
+  for (const [selector,render] of [['#filter-form',renderDonations],['#personal-filter-form',renderPersonalHistory]]) {
+    $(selector).addEventListener('submit', event => event.preventDefault());
+    $(selector).addEventListener('input',render); $(selector).addEventListener('change',render);
+    $(selector).addEventListener('reset', () => setTimeout(render,0));
+  }
+  $('#logout').addEventListener('click',logout); $('#donor-logout').addEventListener('click',logout);
   $('#menu-toggle').addEventListener('click', () => setSidebar(!$('#sidebar').classList.contains('open')));
   $('#sidebar-backdrop').addEventListener('click', () => { setSidebar(false); $('#menu-toggle').focus(); });
   $('#notification-toggle').addEventListener('click', () => setNotifications($('#notifications').hidden));
-  $('#modal').addEventListener('click', (event) => { if (event.target === $('#modal')) { const bounds = $('#modal').getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeModal(); } });
-  $('#modal').addEventListener('close', () => { if (modalTrigger?.isConnected && modalTrigger.getClientRects().length) modalTrigger.focus(); });
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { setNotifications(false); if ($('#sidebar').classList.contains('open')) { setSidebar(false); $('#menu-toggle').focus(); } } });
-  window.addEventListener('hashchange', () => navigate(location.hash.slice(1)));
-  window.addEventListener('resize', () => { if (window.innerWidth > 960) setSidebar(false); else $('#sidebar').inert = !$('#sidebar').classList.contains('open'); });
-
-  function refreshData() {
-    const latest = readStorage(STORAGE_KEY);
-    if (latest?.schemaVersion === 2 && Array.isArray(latest.users) && Array.isArray(latest.donors) && Array.isArray(latest.donations)) data = latest;
-  }
-
-  // Los datos se comparten; la cuenta conectada pertenece solo a esta pestaña.
-  window.addEventListener('storage', (event) => {
-    if (event.key !== STORAGE_KEY) return;
-    refreshData();
-    if (!currentUser) return;
-    const user = data.users.find((item) => item.id === currentUser.id);
-    if (!user?.active) { logout(); toast('Administración desactivó esta cuenta.', true); return; }
-    const roleChanged = user.role !== currentUser.role;
-    currentUser = user;
-    closeModal();
-    renderAll();
-    if (roleChanged) navigate('dashboard');
-    toast('Los registros de tu espacio se actualizaron.');
+  $('#donor-menu-toggle').addEventListener('click', () => setDonorMenu(!$('#donor-nav').classList.contains('open')));
+  $('#donor-account-toggle').addEventListener('click', () => setDonorAccount($('#donor-account-menu').hidden));
+  $('#modal').addEventListener('click', event => {
+    if (event.target !== $('#modal')) return;
+    const bounds = $('#modal').getBoundingClientRect();
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeModal();
   });
-
-  $$('[data-year]').forEach((element) => { element.textContent = new Date().getFullYear(); });
-  $('#today-label').textContent = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-  resetDonation();
-  setSidebar(false);
-  let session = null;
-  try {
-    session = JSON.parse(sessionStorage.getItem(TAB_SESSION_KEY)) || readStorage(SESSION_KEY);
-    localStorage.removeItem(SESSION_KEY);
-  } catch { storageWarning = true; }
-  const savedUser = session?.sesionActiva && data.users.find((user) => user.id === session.usuario && user.active);
-  if (savedUser) startSession(savedUser);
-  if (storageWarning) toast('El almacenamiento local no está disponible o sus datos no se pudieron leer. Esta sesión usa datos temporales.', true);
-})();
+  $('#modal').addEventListener('close', () => { if (modalTrigger?.isConnected && modalTrigger.getClientRects().length) modalTrigger.focus(); });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { setNotifications(false); setSidebar(false); setDonorMenu(false); setDonorAccount(false); }
+  });
+  window.addEventListener('hashchange', () => { if (currentUser) navigate(location.hash.slice(1)); });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 960) { setSidebar(false); setDonorMenu(false); }
+    else $('#sidebar').inert = !$('#sidebar').classList.contains('open');
+  });
+  // Al volver a la pestaña se comprueban la sesión, el rol y las verificaciones.
+  window.addEventListener('focus', async () => {
+    if (!currentUser || refreshing || $('#modal').open || ['registro','aportar','perfil'].includes(isAdmin() ? currentPage : donorPage)) return;
+    refreshing = true;
+    try { await loadData(); } catch (error) { toast(error.message,true); }
+    finally { refreshing = false; }
+  });
+  async function initialize() {
+    $$('[data-year]').forEach(element => { element.textContent = new Date().getFullYear(); });
+    $('#today-label').textContent = new Intl.DateTimeFormat('es-MX',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+    resetDonation(); resetPersonalDonation(); setSidebar(false);
+    try {
+      const { setupRequired } = await api('/auth/status');
+      $('#setup-form').hidden = !setupRequired; $('#login-form').hidden = setupRequired;
+      $('.login-scope').hidden = setupRequired;
+      if (setupRequired) { $('.login-panel h2').textContent = 'Bienvenido a DonativoSeguro'; $('.login-subtitle').textContent = 'Prepara el acceso de tu organizaci?n para comenzar.'; }
+      if (accessToken && !setupRequired) {
+        try { await startSession({accessToken,user:null}); }
+        catch (error) { endSession(); toast(error.message,true); }
+      }
+    } catch (error) {
+      $('#connection-notice').textContent = error.message; $('#connection-notice').hidden = false;
+      $('#login-form button[type="submit"]').disabled = true;
+    }
+  }
+  initialize();

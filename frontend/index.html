@@ -8,7 +8,7 @@
     <title>DonativoSeguro | Gestión de donativos</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%230c9c88'/%3E%3Ctext x='8' y='30' font-size='30' fill='white'%3E♥%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="css/styles.css">
-    <script src="js/scrip.js" defer></script>
+    <script type="module" src="js/scrip.js"></script>
   </head>
   <body>
     <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -79,13 +79,13 @@
         </div>
       </div>
       <div class="login-main">
-        <span class="demo-label">PROTOTIPO INTERACTIVO</span>
+        <span class="demo-label">TU AYUDA, CON SEGUIMIENTO</span>
         <div class="login-panel">
           <span class="login-mark"><svg><use href="#i-shield"/></svg></span>
           <span class="section-kicker">UN ESPACIO PARA HACER EL BIEN</span>
           <h2>Tu ayuda empieza aquí.</h2>
           <p class="login-subtitle">Inicia sesión y continúa construyendo un impacto positivo.</p>
-          <form id="login-form">
+          <form method="post" id="login-form">
             <label for="login-email">Correo electrónico</label>
             <div class="input-icon">
               <svg><use href="#i-mail"/></svg>
@@ -102,24 +102,20 @@
             <div class="login-help"><span><svg><use href="#i-lock"/></svg> Acceso con tu cuenta</span><button type="button" class="text-button" id="access-help">¿Necesitas acceso?</button></div>
             <button class="button primary login-submit" type="submit">Iniciar sesión <svg><use href="#i-arrow"/></svg></button>
           </form>
-          <p class="login-scope">Tu cuenta te lleva a tu espacio. El administrador tiene una vista general del equipo.</p>
-          <details class="demo-access" id="demo-access">
-            <summary class="demo-heading">
-              <svg><use href="#i-grid"/></svg>
-              <strong>Probar con una cuenta de ejemplo</strong>
-              <svg class="demo-chevron"><use href="#i-plus"/></svg>
-            </summary>
-            <p>Cambia de cuenta para comparar los espacios. Cada usuario ve únicamente sus registros.</p>
-            <button type="button" class="demo-account" data-demo="admin"><span class="demo-account-icon"><svg><use href="#i-shield"/></svg></span><span><strong>Administración</strong><small>Todo el equipo · gestión y verificación</small></span><svg><use href="#i-arrow"/></svg></button>
-            <button type="button" class="demo-account" data-demo="usuario"><span class="avatar">VS</span><span><strong>Valeria Sánchez</strong><small>Portal del donador · mis aportaciones</small></span><svg><use href="#i-arrow"/></svg></button>
-            <button type="button" class="demo-account" data-demo="mateo"><span class="avatar alternate-avatar">MR</span><span><strong>Mateo Ruiz</strong><small>Otra cuenta · registros independientes</small></span><svg><use href="#i-arrow"/></svg></button>
-            <div class="demo-password">
-              Contraseña de las cuentas de ejemplo:
-              <code>123456</code>
-            </div>
-          </details>
-          <p id="demo-selection" class="login-hint" aria-live="polite" hidden></p>
-          <p class="local-note"><svg><use href="#i-lock"/></svg> Entorno de demostración. Usa únicamente datos ficticios.</p>
+          <p class="login-scope">Tu cuenta te lleva a tu portal personal. El administrador de la organización puede ayudarte a obtener acceso.</p>
+          <form method="post" id="setup-form" class="setup-form" hidden>
+            <h3>Configura tu organización</h3>
+            <p>Crea la primera cuenta de administrador. Este paso solo se realiza una vez.</p>
+            <label for="setup-name">Nombre completo</label><input id="setup-name" name="name" minlength="2" maxlength="100" autocomplete="name" required>
+            <label for="setup-email">Correo del administrador</label><input id="setup-email" name="email" type="email" autocomplete="email" required>
+            <label for="setup-password">Contraseña nueva</label><input id="setup-password" name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="Mínimo 12 caracteres" required>
+            <label for="setup-token">Código de instalación</label><input id="setup-token" name="setupToken" type="password" autocomplete="off" required aria-describedby="setup-token-help">
+            <p id="setup-token-help">Lo encontrarás en SETUP_TOKEN dentro de backend/.env, en el servidor.</p>
+            <p id="setup-error" class="form-error" role="alert" hidden></p>
+            <button type="submit" class="donor-button donor-submit">Crear administrador</button>
+          </form>
+          <p id="connection-notice" class="form-error" role="status" hidden></p>
+          <p class="local-note"><svg><use href="#i-lock"/></svg> Tus datos se guardan en la base de datos de la organización.</p>
         </div>
         <footer class="login-footer">
           <span>© <span data-year></span> DonativoSeguro</span>
@@ -133,7 +129,7 @@
         <a class="brand" href="#dashboard" data-page="dashboard"><span class="brand-logo"><svg><use href="#i-shield"/></svg></span><span>Donativo<span class="brand-accent">Seguro</span><small>CADA APORTE CUENTA</small></span></a>
         <div class="workspace-switch"><span class="workspace-icon"><svg><use href="#i-lock"/></svg></span><div><strong id="workspace-name">Mi espacio</strong><small id="workspace-description">Solo tus registros</small></div></div>
         <span class="nav-label">NAVEGACIÓN</span>
-        <nav>
+        <nav aria-label="Administraci?n">
           <button data-page="dashboard" class="nav-item active"><svg><use href="#i-grid"/></svg> Dashboard</button>
           <button data-page="donantes" class="nav-item"><svg><use href="#i-people"/></svg> Donantes</button>
           <button data-page="registro" class="nav-item"><svg><use href="#i-plus"/></svg> Registrar donativo</button>
@@ -240,7 +236,7 @@
                   Información actualizada con tus registros
                 </div>
               </article>
-              <aside class="quick-column">
+              <aside class="quick-column" aria-label="Acciones r?pidas">
                 <article class="card quick-card">
                   <h2>Acciones rápidas</h2>
                   <p>El siguiente paso está aquí.</p>
@@ -319,7 +315,7 @@
                   </div>
                   <span class="quick-icon teal"><svg><use href="#i-heart"/></svg></span>
                 </div>
-                <form id="donation-form">
+                <form method="post" id="donation-form">
                   <div class="form-grid">
                     <div class="field full">
                       <label for="donation-donor">Donante *</label>
@@ -360,7 +356,7 @@
                   </div>
                 </form>
               </article>
-              <aside class="registration-aside">
+              <aside class="registration-aside" aria-label="Ayuda para registrar">
                 <span class="large-icon"><svg><use href="#i-shield"/></svg></span>
                 <h2>Un registro claro.<br>Una ayuda que cuenta.</h2>
                 <p>La información completa nos permite dar seguimiento a cada contribución.</p>
@@ -371,7 +367,7 @@
                 </ol>
                 <div class="aside-note">
                   <svg><use href="#i-lock"/></svg>
-                  <p>Este es un prototipo. Los registros se guardan localmente en tu navegador.</p>
+                  <p>Los registros se guardan en la base de datos de la organizaci?n.</p>
                 </div>
               </aside>
             </div>
@@ -541,7 +537,7 @@
         <section id="donor-page-aportar" class="donor-page" aria-labelledby="donor-give-title" hidden>
           <div class="donor-page-heading"><span class="donor-eyebrow">UN GESTO TUYO, NUEVAS POSIBILIDADES</span><h1 id="donor-give-title">Haz una nueva aportación</h1><p>Tu ayuda puede hacer la diferencia.</p></div>
           <div class="donor-give-layout">
-            <form id="personal-donation-form" class="donor-card donor-donation-form">
+            <form method="post" id="personal-donation-form" class="donor-card donor-donation-form">
               <div class="donor-form-intro"><span class="donor-soft-icon"><svg><use href="#i-heart"/></svg></span><div><h2>¿Cómo te gustaría ayudar?</h2><p>Esta aportación se registrará a tu nombre.</p></div></div>
               <fieldset class="donor-type-picker"><legend>Tipo de donativo *</legend><label><input type="radio" name="type" value="Efectivo" checked><span class="donor-soft-icon"><svg><use href="#i-money"/></svg></span><strong>Efectivo</strong><small>Un aporte económico</small></label><label><input type="radio" name="type" value="Especie"><span class="donor-soft-icon"><svg><use href="#i-box"/></svg></span><strong>Especie</strong><small>Alimentos, ropa y más</small></label></fieldset>
               <div id="personal-amount-field" class="donor-field"><label for="personal-amount">Cantidad que deseas aportar *</label><div class="donor-money-input"><span>$</span><input id="personal-amount" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" placeholder="0.00" required><span>MXN</span></div><div class="donor-amount-options" aria-label="Cantidades sugeridas"><button type="button" data-amount="500" aria-pressed="false">$500</button><button type="button" data-amount="1000" aria-pressed="false">$1,000</button><button type="button" data-amount="2000" aria-pressed="false">$2,000</button><button type="button" data-amount="5000" aria-pressed="false">$5,000</button></div><p class="donor-field-help">Elige una cantidad o escribe la que tú prefieras.</p></div>
@@ -553,7 +549,7 @@
               <button type="submit" class="donor-button donor-submit">Registrar mi donativo <svg><use href="#i-arrow"/></svg></button>
               <p class="donor-form-disclaimer">Registro de demostración. No se realiza ningún cobro ni transferencia.</p>
             </form>
-            <aside class="donor-give-aside"><span class="donor-soft-icon"><svg><use href="#i-shield"/></svg></span><h2>La ayuda empieza<br>contigo.</h2><p>No hay aportación pequeña cuando nace de las ganas de ayudar.</p><ol><li><strong>Cuéntanos sobre tu aporte</strong><span>Completa los detalles de tu donativo.</span></li><li><strong>Recibe tu folio</strong><span>Guárdalo para consultar el seguimiento.</span></li><li><strong>Acompaña su camino</strong><span>Revisa su estado en Mis donativos.</span></li></ol><p class="donor-aside-note">Después del registro, el equipo revisará tu aportación.</p></aside>
+            <aside class="donor-give-aside" aria-label="C?mo aportar"><span class="donor-soft-icon"><svg><use href="#i-shield"/></svg></span><h2>La ayuda empieza<br>contigo.</h2><p>No hay aportación pequeña cuando nace de las ganas de ayudar.</p><ol><li><strong>Cuéntanos sobre tu aporte</strong><span>Completa los detalles de tu donativo.</span></li><li><strong>Recibe tu folio</strong><span>Guárdalo para consultar el seguimiento.</span></li><li><strong>Acompaña su camino</strong><span>Revisa su estado en Mis donativos.</span></li></ol><p class="donor-aside-note">Después del registro, el equipo revisará tu aportación.</p></aside>
           </div>
         </section>
 
@@ -569,14 +565,14 @@
           <div class="donor-page-heading"><span class="donor-eyebrow">MIRA TODO LO QUE HAS CONSTRUIDO</span><h1 id="donor-impact-title">Mi impacto</h1><p>Cada aportación cuenta. Este es el camino que has construido.</p></div>
           <div class="donor-impact-feature"><div><span class="donor-eyebrow">TU GENEROSIDAD EN ACCIÓN</span><h2>Los pequeños gestos<br>hacen grandes historias.</h2><p>Este es un reflejo de tus aportaciones, de tu constancia y de tus ganas de ayudar.</p></div><svg aria-hidden="true"><use href="#i-heart"/></svg></div>
           <div id="donor-impact-numbers" class="donor-impact-strip donor-impact-four"></div>
-          <article class="donor-card donor-journey"><div class="donor-section-heading"><div><span class="donor-eyebrow">PASO A PASO</span><h2>Tu camino</h2></div><span class="donor-journey-label">Cada paso tiene valor</span></div><ol id="donor-journey-timeline" class="donor-timeline"></ol><div id="donor-journey-progress"></div><p class="donor-progress-note">Meta personal orientativa del prototipo. Los avances se calculan con tus registros.</p></article>
+          <article class="donor-card donor-journey"><div class="donor-section-heading"><div><span class="donor-eyebrow">PASO A PASO</span><h2>Tu camino</h2></div><span class="donor-journey-label">Cada paso tiene valor</span></div><ol id="donor-journey-timeline" class="donor-timeline"></ol><div id="donor-journey-progress"></div><p class="donor-progress-note">Meta personal orientativa. Los avances se calculan con tus registros.</p></article>
           <div class="donor-thanks-note"><svg><use href="#i-heart"/></svg><h2>Gracias por formar parte de DonativoSeguro.</h2><p>El siguiente capítulo de esta historia también puede empezar contigo.</p><button class="donor-button" data-donor-page="aportar">Seguir ayudando <svg><use href="#i-arrow"/></svg></button></div>
         </section>
 
         <section id="donor-page-perfil" class="donor-page" aria-labelledby="donor-profile-title" hidden>
           <div class="donor-page-heading"><span class="donor-eyebrow">QUÉ BUENO QUE ESTÉS AQUÍ</span><h1 id="donor-profile-title">Mi perfil</h1><p>Un pequeño espacio para ti y para mantenernos en contacto.</p></div>
-          <div class="donor-profile-layout"><aside class="donor-profile-card"><span id="donor-profile-avatar" class="avatar"></span><h2 id="donor-profile-name"></h2><p>Parte de nuestra comunidad</p><span class="donor-member-label">Miembro desde</span><strong id="donor-member-since"></strong><svg class="donor-profile-heart" aria-hidden="true"><use href="#i-heart"/></svg></aside>
-            <form id="personal-profile-form" class="donor-card donor-profile-form"><h2>Tu información personal</h2><p>Puedes actualizar tu nombre y tu teléfono.</p><div class="donor-field"><label for="personal-name">Nombre completo *</label><input id="personal-name" name="name" autocomplete="name" maxlength="100" required></div><div class="donor-field"><label for="personal-email">Correo electrónico</label><input id="personal-email" type="email" autocomplete="email" readonly><p class="donor-field-help">Tu correo identifica tu cuenta. Para cambiarlo, contacta a administración.</p></div><div class="donor-field"><label for="personal-phone">Teléfono *</label><input id="personal-phone" name="phone" type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="Ingresa 10 dígitos, sin espacios ni símbolos." placeholder="10 dígitos" required></div><p id="personal-profile-error" class="form-error" role="alert" hidden></p><div class="donor-profile-actions"><button type="submit" class="donor-button">Guardar cambios <svg><use href="#i-check"/></svg></button></div></form>
+          <div class="donor-profile-layout"><aside class="donor-profile-card" aria-label="Resumen de tu perfil"><span id="donor-profile-avatar" class="avatar"></span><h2 id="donor-profile-name"></h2><p>Parte de nuestra comunidad</p><span class="donor-member-label">Miembro desde</span><strong id="donor-member-since"></strong><svg class="donor-profile-heart" aria-hidden="true"><use href="#i-heart"/></svg></aside>
+            <form method="post" id="personal-profile-form" class="donor-card donor-profile-form"><h2>Tu información personal</h2><p>Puedes actualizar tu nombre y tu teléfono.</p><div class="donor-field"><label for="personal-name">Nombre completo *</label><input id="personal-name" name="name" autocomplete="name" maxlength="100" required></div><div class="donor-field"><label for="personal-email">Correo electrónico</label><input id="personal-email" type="email" autocomplete="email" readonly><p class="donor-field-help">Tu correo identifica tu cuenta. Para cambiarlo, contacta a administración.</p></div><div class="donor-field"><label for="personal-phone">Teléfono *</label><input id="personal-phone" name="phone" type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" title="Ingresa 10 dígitos, sin espacios ni símbolos." placeholder="10 dígitos" required></div><p id="personal-profile-error" class="form-error" role="alert" hidden></p><div class="donor-profile-actions"><button type="submit" class="donor-button">Guardar cambios <svg><use href="#i-check"/></svg></button></div></form>
           </div>
         </section>
       </main>
