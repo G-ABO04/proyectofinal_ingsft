@@ -15,6 +15,8 @@ npm start
 
 Abre **http://127.0.0.1:3000**. Para esta versión se utiliza el servidor del backend, en lugar de Live Server o abrir `index.html` directamente.
 
+La terminal del backend muestra cada petición con método, ruta, estado HTTP y duración, por ejemplo `PUT /api/auth/profile 200 - 2.4 ms`. Aparecen también los errores, como `401` o `404`. Los registros no incluyen cuerpos, contraseñas, tokens ni parámetros de consulta. Para aplicar cambios con `npm start`, reinicia el servidor; `npm run dev` lo reinicia automáticamente al editar archivos.
+
 1. En la primera visita aparece **Configura tu organización**.
 2. Abre `backend/.env` en tu editor y copia únicamente el valor de `SETUP_TOKEN` al campo Código de instalación. No compartas el archivo ni subas sus valores a Git.
 3. Elige tu nombre, correo y una contraseña de al menos 12 caracteres. Se crea el primer administrador y se cierra permanentemente el alta inicial mientras existan cuentas.

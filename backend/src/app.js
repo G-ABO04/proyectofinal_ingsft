@@ -7,8 +7,18 @@ const { userRoutes } = require('./routes/usuarios.routes');
 const { donorRoutes } = require('./routes/donantes.routes');
 const { donationRoutes } = require('./routes/donativos.routes');
 
-function createApp({ db, config }) {
+function createApp({ db, config, requestLog = console.info }) {
   const app = express();
+  app.use((req, res, next) => {
+    const started = performance.now();
+    const method = req.method;
+    const route = req.path;
+    res.once('finish', () => {
+      const duration = (performance.now() - started).toFixed(1);
+      requestLog(`${method} ${route} ${res.statusCode} - ${duration} ms`);
+    });
+    next();
+  });
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy);
   app.use(helmet({ crossOriginEmbedderPolicy: true, contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'"], fontSrc: ["'self'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], objectSrc: ["'none'"], baseUri: ["'self'"], formAction: ["'self'"], frameAncestors: ["'none'"], upgradeInsecureRequests: config.production ? [] : null } }, strictTransportSecurity: config.production ? undefined : false }));

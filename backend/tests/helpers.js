@@ -14,7 +14,7 @@ async function fixture(empty = false, overrides = {}) {
   passwordHash ||= await hashPassword(password);
   const db = openDatabase();
   const settings = { ...config, ...overrides };
-  const app = createApp({ db, config: settings });
+  const app = createApp({ db, config: settings, requestLog: () => {} });
   const users = empty ? {} : Object.fromEntries(['admin', 'ana', 'mateo'].map((name) => [name, createUser(db, { name, email: `${name}@example.com`, role: name === 'admin' ? 'Administrador' : 'Usuario' }, passwordHash)]));
   function token(user, claims = {}) {
     const id = randomUUID();
