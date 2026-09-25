@@ -1,0 +1,52 @@
+{
+  "name": "donativoseguro-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API y servidor de DonativoSeguro",
+  "engines": {
+    "node": ">=24.11 <25"
+  },
+  "scripts": {
+    "start": "./start.sh",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "check": "node --check services/api-gateway/src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/backend_monolith_archived/"
+    ],
+    "collectCoverageFrom": [
+      "services/auth-service/src/routes/auth.routes.js",
+      "services/user-service/src/routes/usuarios.routes.js",
+      "services/donor-service/src/routes/donantes.routes.js",
+      "services/donation-service/src/routes/donativos.routes.js",
+      "services/auth-service/src/security.js"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "json-summary"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}

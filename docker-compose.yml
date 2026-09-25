@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - FRONTEND_PATH=/app/frontend
+    depends_on:
+      - expense-service
+      - auth-service
+      - user-service
+      - donor-service
+      - donation-service
+    volumes:
+      - ./frontend:/app/frontend
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+    environment:
+      - PORT=3001
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  user-service:
+    build:
+      context: ./services/user-service
+    environment:
+      - PORT=3002
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  donor-service:
+    build:
+      context: ./services/donor-service
+    environment:
+      - PORT=3003
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  donation-service:
+    build:
+      context: ./services/donation-service
+    environment:
+      - PORT=3004
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  expense-service:
+    build:
+      context: ./services/expense-service
+    environment:
+      - PORT=3005
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  tax-service:
+    build:
+      context: ./services/tax-service
+    environment:
+      - PORT=3006
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database
+
+  accounting-service:
+    build:
+      context: ./services/accounting-service
+    environment:
+      - PORT=3007
+      - DATABASE_PATH=/app/database/donativoseguro.sqlite
+      - JWT_SECRET=${JWT_SECRET:-GENERAR_TU_PROPIO_SECRET_DE_32_CHARS}
+    volumes:
+      - ./database:/app/database

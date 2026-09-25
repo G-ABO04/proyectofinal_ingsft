@@ -1,0 +1,181 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for expense-service/src/validation.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">expense-service/src</a> validation.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/24</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/13</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/7</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/17</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const { z } = <span class="cstat-no" title="statement not covered" >require('zod');</span>
+const today = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });</span></span>
+const name = <span class="cstat-no" title="statement not covered" >z.string().trim().min(2).max(100);</span>
+const email = <span class="cstat-no" title="statement not covered" >z.email().trim().toLowerCase().max(150);</span>
+const phone = <span class="cstat-no" title="statement not covered" >z.string().regex(/^\d{10}$/);</span>
+const password = <span class="cstat-no" title="statement not covered" >z.string().min(12).max(128).refine(<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >value.trim().length &gt;= 12)</span>;</span>
+const role = <span class="cstat-no" title="statement not covered" >z.enum(['Administrador', 'Usuario']);</span>
+const date = <span class="cstat-no" title="statement not covered" >z.iso.date().refine(<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >value &gt;= '2000-01-01' &amp;&amp; value &lt;= today(),</span> 'La fecha debe estar entre el año 2000 y hoy.');</span>
+const schemas = <span class="cstat-no" title="statement not covered" >{</span>
+  login: z.object({ email, password: z.string().min(1).max(128) }).strict(),
+  setup: z.object({ name, email, password, setupToken: z.string().min(1).max(200) }).strict(),
+  user: z.object({ name, email, password, role }).strict(),
+  userUpdate: z.object({ name, email, password: password.optional(), role }).strict(),
+  state: z.object({ active: z.boolean() }).strict(),
+  profile: z.object({ name, phone }).strict(),
+  donor: z.object({ name, email, phone, person: z.enum(['Persona física','Persona moral']), ownerId: z.string().min(1).nullable() }).strict(),
+  donation: z.object({ donorId: z.string().min(1).optional(), type: z.enum(['Efectivo','Especie']), amount: z.number().positive().max(999999999.99).optional(), description: z.string().trim().max(200).optional(), date, notes: z.string().trim().max(1000).default('') }).strict().superRefine(<span class="fstat-no" title="function not covered" >(v</span>alue, ctx) =&gt; {
+<span class="cstat-no" title="statement not covered" >    if (value.type === 'Efectivo' &amp;&amp; (!value.amount || Math.abs(value.amount * 100 - Math.round(value.amount * 100)) &gt; 0.001)) <span class="cstat-no" title="statement not covered" >ctx.addIssue({ code: 'custom', message: 'Ingresa una cantidad positiva con máximo dos decimales.', path: ['amount'] });</span></span>
+<span class="cstat-no" title="statement not covered" >    if (value.type === 'Especie' &amp;&amp; !value.description) <span class="cstat-no" title="statement not covered" >ctx.addIssue({ code: 'custom', message: 'Describe la aportación en especie.', path: ['description'] });</span></span>
+  })
+};
+&nbsp;
+function <span class="fstat-no" title="function not covered" >validate(</span>schema) {
+<span class="cstat-no" title="statement not covered" >  return <span class="fstat-no" title="function not covered" >(r</span>eq, res, next) =&gt; {</span>
+    const result = <span class="cstat-no" title="statement not covered" >schema.safeParse(req.body);</span>
+<span class="cstat-no" title="statement not covered" >    if (!result.success) <span class="cstat-no" title="statement not covered" >return res.status(400).json({ error: 'Revisa los datos del formulario.', fields: result.error.issues.map(<span class="fstat-no" title="function not covered" >(i</span>ssue) =&gt; (<span class="cstat-no" title="statement not covered" >{ field: issue.path.join('.'), message: issue.message })</span>) });</span></span>
+<span class="cstat-no" title="statement not covered" >    req.validated = result.data;</span>
+<span class="cstat-no" title="statement not covered" >    next();</span>
+  };
+}
+&nbsp;
+<span class="cstat-no" title="statement not covered" >module.exports = { schemas, validate, today };</span>
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-09-25T19:34:12.391Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

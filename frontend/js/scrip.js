@@ -244,7 +244,6 @@
     });
     $('#dashboard-title').textContent = admin ? 'El impacto de todo tu equipo.' : `Hola, ${currentUser.name.split(' ')[0]}. Este es tu espacio.`;
     $('#page-dashboard .page-heading p').textContent = admin ? 'Una visión completa para acompañar, organizar y verificar cada aporte.' : 'Lleva el seguimiento de tus donantes y de la ayuda que registras.';
-    $('.welcome-banner .banner-kicker').textContent = admin ? 'ADMINISTRACIÓN · VISIÓN GENERAL' : 'TU CUENTA · TU CONTRIBUCIÓN';
     $('.welcome-banner h2').textContent = admin ? 'La confianza también se construye con seguimiento.' : 'Cada aporte que registras tiene una historia.';
     $('.welcome-banner p').textContent = admin ? 'Revisa los aportes del equipo y confirma la información recibida.' : 'Organiza tus donantes y consulta el estado de tus donativos.';
     const bannerButton = $('.banner-button');

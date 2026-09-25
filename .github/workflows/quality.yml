@@ -15,16 +15,16 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: backend
+        
       - run: npm run check && npm run test:coverage && npm audit --audit-level=high
-        working-directory: backend
+        
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: cobertura-jest
-          path: backend/coverage
+          path: coverage
       - name: SonarQube (cuando el servidor está configurado)
         if: ${{ vars.SONAR_HOST_URL != '' && github.event_name != 'pull_request' }}
         uses: SonarSource/sonarqube-scan-action@v5
@@ -39,18 +39,16 @@ jobs:
       - name: Construir y desplegar un entorno de prueba aislado
         shell: bash
         run: |
-          docker build -t donativoseguro:test .
           export JWT_SECRET=$(openssl rand -hex 48)
           export SETUP_TOKEN=$(openssl rand -hex 24)
-          docker run -d --name staging -p 127.0.0.1:3000:3000 \
-            -e NODE_ENV=test -e JWT_SECRET -e SETUP_TOKEN \
-            -e PUBLIC_ORIGIN=http://127.0.0.1:3000 donativoseguro:test
+          export FRONTEND_PATH=/app/frontend
+          docker compose up --build -d
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3000/api/health; then break; fi
             sleep 2
           done
           curl --fail http://127.0.0.1:3000/api/health
-          node backend/scripts/smoke.cjs
+          node backend_monolith_archived/scripts/smoke.cjs
       - name: OWASP ZAP contra el despliegue de prueba
         run: |
           mkdir -p reports
@@ -65,4 +63,4 @@ jobs:
           path: reports
       - name: Cerrar el entorno de prueba
         if: always()
-        run: docker logs staging; docker rm -f staging
+        run: docker compose logs; docker compose down
