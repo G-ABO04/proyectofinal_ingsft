@@ -33,6 +33,9 @@
       "services/user-service/src/routes/usuarios.routes.js",
       "services/donor-service/src/routes/donantes.routes.js",
       "services/donation-service/src/routes/donativos.routes.js",
+      "services/expense-service/src/routes/expense.routes.js",
+      "services/tax-service/src/routes/tax.routes.js",
+      "services/accounting-service/src/routes/accounting.routes.js",
       "services/auth-service/src/security.js"
     ],
     "coverageReporters": [
