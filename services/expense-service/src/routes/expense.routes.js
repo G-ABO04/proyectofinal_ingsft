@@ -52,7 +52,7 @@ function expenseRoutes(db) {
     res.status(201).json({ expense: { seq: result.lastInsertRowid } });
   });
 
-  router.patch('/expenses/:seq/approve', adminOnly, (req, res) => {
+  router.patch('/expenses/:seq/approve', (req, res) => {
     const seq = req.params.seq;
     const expense = db.prepare('SELECT status FROM expenses WHERE seq = ?').get(seq);
     if (!expense) return res.status(404).json({ error: 'Gasto no encontrado' });
